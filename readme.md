@@ -14,7 +14,7 @@ Minimalism state manager
 | connect() HOC             |          |   ✓   |
 | State Mappings / Bindings |          |   ✓   |
 
-react-xs has nothing special but it is powerful
+### react-xs has nothing special but it is powerful, easy to use, reduce code complexity
 
 ## Counter App
 
@@ -34,6 +34,40 @@ const Counter = $(() => (
   </>
 ));
 render(<Counter />, document.getElementById("root"));
+```
+
+Compare to redux version
+
+```jsx harmony
+import React from "react";
+import { render } from "react-dom";
+import { createStore } from "redux";
+import { Provider, connect } from "react-redux";
+
+const reducer = (state = 0, action) => {
+  switch (action.type) {
+    case "INCREMENT":
+      return state + 1;
+    default:
+      return state;
+  }
+};
+
+const store = createStore(reducer);
+
+const App = connect(state => ({ count: state }))(({ dispatch, count }) => (
+  <>
+    <h1>{count}</h1>
+    <button onClick={() => dispatch({ type: "INCREMENT" })}>Increase</button>
+  </>
+));
+
+render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.getElementById("root")
+);
 ```
 
 ## Todo App (Performance test)
