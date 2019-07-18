@@ -231,7 +231,7 @@ class State {
         mutationSubscriptions.add(subscription);
       }
     } else {
-      notify(this.__subscriptions);
+      notify(this.__subscriptions, value);
     }
   }
 
@@ -296,9 +296,9 @@ class State {
   }
 }
 
-function notify(subscriptions) {
+function notify(subscriptions, ...args) {
   for (const subscription of subscriptions) {
-    subscription();
+    subscription(...args);
   }
 }
 
@@ -323,6 +323,26 @@ function clone(value) {
 
 function extend(...prototypes) {
   Object.assign(State.prototype, ...prototypes);
+}
+
+function getValues(stateMap) {
+  const result = {};
+
+  Object.entries(stateMap).forEach(entry => {
+    stateMap[entry[0]] = entry[1].value;
+  });
+
+  return result;
+}
+
+function setValues(stateMap, data = {}) {
+  mutate(() => {
+    Object.entries(data).forEach(entry => {
+      if (entry[0] in stateMap) {
+        stateMap[0].value = entry[1];
+      }
+    });
+  });
 }
 
 function subscribe(
@@ -412,6 +432,34 @@ extend({
   },
   slice(...args) {
     return this.mutate(array => array.slice(...args));
+  },
+  exclude(...values) {
+    if (!values.length) return this;
+    const temp = [];
+    const array = this.__getValue();
+    for (const item of array) {
+      if (!values.includes(item)) {
+        temp.push(item);
+      }
+    }
+    if (temp.length !== array.length) {
+      return this.set(temp);
+    }
+    return this;
+  },
+  remove(...indexes) {
+    indexes.sort();
+    if (!indexes.length) return this;
+    let array = this.__getValue();
+    if (indexes[indexes.length - 1] >= array.length) return this;
+    array = array.slice(0);
+    while (indexes.length) {
+      const index = indexes.pop();
+      if (index >= array.length) break;
+      array.splice(index, 1);
+    }
+    this.value = array;
+    return this;
   }
 });
 
@@ -549,9 +597,26 @@ extend({
 extend({
   replace(...args) {
     return this.mutate(current => current.replace(...args));
+  },
+  substr(...args) {
+    return this.mutate(current => current.substr(...args));
+  },
+  substring(...args) {
+    return this.mutate(current => current.substring(...args));
+  },
+  split(...args) {
+    return this.mutate(current => current.split(...args));
+  },
+  trim(...args) {
+    return this.mutate(current => current.trim(...args));
+  },
+  upper(...args) {
+    return this.mutate(current => current.upper(...args));
+  },
+  lower(...args) {
+    return this.mutate(current => current.lower(...args));
   }
 });
-
 function createDebouncedFunction(func, interval = 20) {
   if (interval === false) return func;
   let timerId;
@@ -567,7 +632,9 @@ Object.assign(main, {
   extend,
   mutate,
   clone,
-  subscribe
+  subscribe,
+  get: getValues,
+  set: setValues
 });
 
 export default main;
