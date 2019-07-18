@@ -344,8 +344,8 @@ import $ from "react-xs";
 // rejected { loading:false, done:true, data:undefined, error:any }
 const userProfile = $().async();
 const LoadUserProfile = () => {
-  // do nothing if loading progress is started
-  if (userProfile.get`started`) {
+  // do nothing if we already fetched data
+  if (userProfile.get`done`) {
     return;
   }
   // update state once promise resolved/rejected

@@ -473,30 +473,37 @@ class State {
       return this.mutate(value =>
         typeof value === "undefined"
           ? asyncInitial
-          : { loading: false, done: true, data: value, error: undefined }
+          : { loading: false, done: false, data: value, error: undefined }
       );
     }
 
     const token = (this.__currentPromiseToken = {});
-    this.value = asyncLoading;
+    let done = false;
+
     promise.then(
-      data =>
+      data => {
+        done = true;
         token === this.__currentPromiseToken &&
-        (this.value = {
-          loading: false,
-          done: true,
-          data,
-          error: undefined
-        }),
-      error =>
+          (this.value = {
+            loading: false,
+            done,
+            data,
+            error: undefined
+          });
+      },
+      error => {
+        done = true;
         token === this.__currentPromiseToken &&
-        (this.value = {
-          loading: false,
-          done: true,
-          error,
-          data: undefined
-        })
+          (this.value = {
+            loading: false,
+            done,
+            error,
+            data: undefined
+          });
+      }
     );
+
+    !done && (this.value = asyncLoading);
     return this;
   }
 }
