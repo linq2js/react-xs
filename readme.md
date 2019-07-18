@@ -73,7 +73,7 @@ render(
 ## Todo App (Performance test)
 
 Please refer this [link](https://sr4h3.codesandbox.io/) , an example runs with 5000 todo items (over 20.000 elements).
-User can update todo text on the fly, without lagging. Redux or other state managers get lag from 1000-2000 todo items
+User can update todo text on the fly, without lagging. Redux or other state managers get lag with 1000-2000 todo items
 
 ## Creating simple state
 
@@ -224,4 +224,145 @@ date.add(1, "year"); // add 1 year, 2021-01-01
 // hour/h, minute/m, second/s, milli
 // you also add multiple durations
 date.add(1, "M", 2, "D"); // add 1 month and 2 days, 2021-02-03
+```
+
+If you want to extend more helpers, just call \$.extend()
+
+```jsx harmony
+import $ from "react-xs";
+import immhelper from "immhelper";
+
+$.extend({
+  update(specs) {
+    return this.mutate(current => immhelper(current, specs));
+  }
+});
+const state = $({
+  name: "N/A"
+});
+
+state.update({
+  name: ["set", "Hung"]
+});
+
+// { name: 'Hung' }
+```
+
+## Handling multiple states change
+
+```jsx harmony
+import $ from "react-xs";
+
+const state1 = $(0);
+const state2 = $(0);
+
+$.subscribe([state1, state2], (state1Value, state2Value) => {
+  console.log("test1", state1Value, state2Value);
+});
+
+// using debounce option
+$.subscribe(
+  [state1, state2],
+  (state1Value, state2Value) => {
+    console.log("test2", state1Value, state2Value);
+  },
+  {
+    debounce: 100
+  }
+);
+
+state1.value = 1;
+state2.value = 2;
+
+// output
+// test1 1 0
+// test1 1 2
+// test2 1 2
+```
+
+## Computed state
+
+```jsx harmony
+import $ from "react-xs";
+
+const state1 = $(1);
+const state2 = $(2);
+const state3 = $().compute([state1, state2], (s1, s2) => s1 + s2); // state3 = 3
+state1.value = 100; // state3 = 102
+state2.value = 101; // state3 = 201
+```
+
+## Getting values of multiple states
+
+```jsx harmony
+import $ from "react-xs";
+
+const state1 = $(1);
+const state2 = $(2);
+
+$.get({
+  state1,
+  state2
+}); // { state1: 1, state2: 2 }
+```
+
+## Update values of multiple states
+
+```jsx harmony
+import $ from "react-xs";
+
+const state1 = $(1);
+const state2 = $(2);
+const state3 = $(3);
+$.set(
+  {
+    state1,
+    state2
+  },
+  {
+    state1: 5,
+    state2: 6,
+    state3: 7
+  }
+);
+// state1 = 5
+// state2 = 6
+// state3 = 3
+```
+
+## Dispatching function one time when component did mount
+
+```jsx harmony
+import React from "react";
+import { render } from "react-dom";
+import $ from "react-xs";
+
+// assign default async status to state value
+// initial { loading:false, done:false, data:undefined, error:undefined }
+// loading { loading:true, done:false, data:undefined, error:undefined }
+// resolved { loading:false, done:true, data:any, error:undefined }
+// rejected { loading:false, done:true, data:undefined, error:any }
+const userProfile = $().async();
+const LoadUserProfile = () => {
+  // do nothing if loading progress is started
+  if (userProfile.get`started`) {
+    return;
+  }
+  // update state once promise resolved/rejected
+  userProfile.async(fetch("http://www.mocky.io/v2/5d30858e320000ad57204578"));
+};
+
+const UserProfileComponent = $(() => {
+  $.one(LoadUserProfile);
+
+  return (
+    <div>
+      {userProfile.get`done`
+        ? "Loading..."
+        : JSON.stringify(userProfile.get`data`)}
+    </div>
+  );
+});
+
+render(<UserProfileComponent />, document.getElementById("root"));
 ```

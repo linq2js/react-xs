@@ -1,12 +1,12 @@
 import React from "react";
 import { render, cleanup, act } from "@testing-library/react";
-import X from "react-xs";
+import $ from "react-xs";
 
 afterEach(cleanup);
 
 test("Should notify change one time when update multiple states", () => {
-  const state1 = X(0);
-  const state2 = X(0);
+  const state1 = $(0);
+  const state2 = $(0);
 
   const subscription = jest.fn();
 
@@ -20,12 +20,12 @@ test("Should notify change one time when update multiple states", () => {
 
   action();
   expect(subscription.mock.calls.length).toBe(2);
-  X.mutate(action);
+  $.mutate(action);
   expect(subscription.mock.calls.length).toBe(3);
 });
 
 test("Should return nested value", () => {
-  const person = X({
+  const person = $({
     name: "Hung",
     age: 99,
     address: { street: "abc", city: "def" }
@@ -36,7 +36,7 @@ test("Should return nested value", () => {
 });
 
 test("Should update nested value and root value", () => {
-  const person = X({
+  const person = $({
     name: "Hung",
     age: 99,
     address: { street: "abc", city: "def" }
@@ -62,18 +62,18 @@ test("Should update nested value and root value", () => {
 });
 
 test("Should re-render once nested prop changed not whole state", async () => {
-  const person = X({
+  const person = $({
     name: "Hung",
     age: 99,
     address: { street: "abc", city: "def" }
   });
   const comp1Render = jest.fn();
   const comp2Render = jest.fn();
-  const Comp1 = X(() => {
+  const Comp1 = $(() => {
     comp1Render();
     return <>{person.value.address.street}</>;
   });
-  const Comp2 = X(() => {
+  const Comp2 = $(() => {
     comp2Render();
     return <>{person.prop`address.street`.value}</>;
   });

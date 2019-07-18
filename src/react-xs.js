@@ -1,8 +1,31 @@
-import { memo, useCallback, useRef, useEffect, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useRef,
+  useEffect,
+  useState,
+  createElement,
+  useMemo
+} from "react";
 
 let requiredStateStack;
 let mutationSubscriptions = new Set();
+let oneEffects;
+let manyEffects;
+let unmountEffects;
 let mutationScopes = 0;
+const asyncInitial = {
+  done: false,
+  loading: false,
+  data: undefined,
+  error: undefined
+};
+const asyncLoading = {
+  done: false,
+  loading: true,
+  data: undefined,
+  error: undefined
+};
 const defaultComparer = (a, b) => a === b;
 
 /**
@@ -27,16 +50,31 @@ function createState(defaultValue, options) {
   return new State(defaultValue, options);
 }
 
-function createComponent(component, {} = {}) {
+function createComponent(
+  component,
+  {
+    unmount: unmountOption,
+    one: oneOption,
+    many: manyOption,
+    states: stateOption,
+    actions: actionsOption
+  } = {}
+) {
+  const stateEntries = stateOption ? Object.entries(stateOption) : undefined;
+  const actionEntries = actionsOption
+    ? Object.entries(actionsOption)
+    : undefined;
+
   function Wrapper(props) {
-    let prevRequiredStateStack = requiredStateStack;
     const [, forceRerender] = useState();
+    const propsRef = useRef();
     // we use this ref to store current required states
     // this stack will cleanup once component re-render
     const currentRequiredStateStackRef = useRef();
     const prevValuesRef = useRef([]);
     const exceptionRef = useRef();
     const unsubscribesRef = useRef([]);
+    const manyEffectArgsRef = useRef([]);
     const cleanup = useCallback(() => {
       unsubscribesRef.current.forEach(unsubscribe => unsubscribe());
       for (const state of currentRequiredStateStackRef.current) {
@@ -45,6 +83,15 @@ function createComponent(component, {} = {}) {
         }
       }
       currentRequiredStateStackRef.current.clear();
+    }, []);
+    const actionMap = useMemo(() => {
+      if (!actionEntries) return undefined;
+      const actions = {};
+      actionEntries.forEach(
+        entry =>
+          (actions[entry[0]] = (...args) =>
+            mutate(() => entry[1](propsRef.current, ...args)))
+      );
     }, []);
     const checkForUpdates = useCallback(() => {
       let hasChange = false;
@@ -69,6 +116,10 @@ function createComponent(component, {} = {}) {
         forceRerender({});
       }
     }, [cleanup]);
+    const oneEffectCalledRef = useRef(false);
+    const oneEffectsRef = useRef([]);
+    const manyEffectsRef = useRef([]);
+    const unmountEffectsRef = useRef([]);
 
     if (exceptionRef.current) {
       const ex = exceptionRef.current;
@@ -76,29 +127,118 @@ function createComponent(component, {} = {}) {
       throw ex;
     }
 
+    propsRef.current = props;
+    unmountEffectsRef.current = [];
+
     if (!currentRequiredStateStackRef.current) {
       // noinspection JSValidateTypes
       currentRequiredStateStackRef.current = new Set();
     } else {
     }
 
-    // setup stacks
-    requiredStateStack = currentRequiredStateStackRef.current;
-
     useEffect(() => cleanup, [cleanup]);
 
+    // process one effects
+    useEffect(() => {
+      oneEffectCalledRef.current = true;
+      for (const effect of oneEffectsRef.current) {
+        effect(propsRef.current);
+      }
+
+      // process unmount effect
+      return () => {
+        unmountEffectsRef.current.forEach(unmount => unmount(propsRef.current));
+      };
+    }, []);
+
+    // process many effects
+    useEffect(() => {
+      const effects = manyEffectsRef.current;
+      manyEffectsRef.current = [];
+      effects.forEach(([action, argsResolver], index) => {
+        let args = argsResolver
+          ? // we can pass literal array as argsResolver
+            Array.isArray(argsResolver)
+            ? argsResolver
+            : argsResolver(props)
+          : [];
+        if (!Array.isArray(args)) {
+          args = [args];
+        }
+        const prevArgs = manyEffectArgsRef.current[index];
+        const effectShouldCallEveryTime =
+          typeof prevArgs === "undefined" || !argsResolver;
+        if (effectShouldCallEveryTime || !arrayEqual(prevArgs, args)) {
+          manyEffectArgsRef.current[index] = args;
+          action(...args);
+        }
+      });
+    });
+
+    // setup stacks
+    const prevRequiredStateStack = requiredStateStack;
+    requiredStateStack = currentRequiredStateStackRef.current;
+
+    const prevOneEffects = oneEffects;
+    if (!oneEffectCalledRef.current) {
+      oneEffects = oneEffectsRef.current;
+    }
+
+    const prevManyEffects = manyEffects;
+    manyEffects = manyEffectsRef.current;
+
+    const prevUnmountEffects = unmountEffects;
+    unmountEffects = unmountEffectsRef.current;
+
     try {
-      return component(props);
+      let newProps = props;
+
+      if (stateEntries || oneOption || manyOption || actionMap) {
+        newProps = {};
+        // map state to props
+        stateEntries &&
+          stateEntries.forEach(
+            entry =>
+              (newProps[entry[0]] =
+                typeof entry[1] === "function"
+                  ? entry[1](propsRef.current)
+                  : entry[1].value)
+          );
+        oneOption && one(...[].concat(oneOption));
+        manyOption &&
+          // { many: action }
+          (typeof manyOption === "function"
+            ? [[manyOption]]
+            : // { many: [action, resolver] }
+            typeof manyOption[0] === "function"
+            ? [manyOption]
+            : //
+              manyOption
+          ).forEach(many);
+
+        // map actions to props
+        actionMap && Object.assign(newProps, actionMap);
+        // assign original props to new props, that means parent component can overwrite child component prop
+        Object.assign(newProps, props);
+      }
+
+      unmountOption && unmount(...[].concat(unmountOption));
+
+      return component(newProps);
     } finally {
+      // restore stacks
+      requiredStateStack = prevRequiredStateStack;
+      oneEffects = prevOneEffects;
+      manyEffects = prevManyEffects;
+      unmountEffects = prevUnmountEffects;
+
       unsubscribesRef.current = [];
       prevValuesRef.current = [];
+
       for (const state of currentRequiredStateStackRef.current) {
         unsubscribesRef.current.push(state.subscribe(checkForUpdates));
         prevValuesRef.current.push(state.value);
       }
-
-      // restore stacks
-      requiredStateStack = prevRequiredStateStack;
     }
   }
 
@@ -118,7 +258,11 @@ function compose(...functions) {
 }
 
 function hoc(...callbacks) {
-  if (typeof callbacks[0] !== "function") {
+  if (
+    callbacks[0] &&
+    typeof callbacks[0] !== "function" &&
+    !callbacks[0].styledComponentId
+  ) {
     return component => createComponent(component, callbacks[0]);
   }
 
@@ -126,7 +270,7 @@ function hoc(...callbacks) {
     (nextHoc, callback) => Component => {
       const MemoComponent = memo(Component);
 
-      return props => {
+      return createComponent(props => {
         // callback requires props and Comp, it must return React element
         if (callback.length > 1) {
           return callback(props, MemoComponent);
@@ -138,7 +282,7 @@ function hoc(...callbacks) {
         }
 
         return createElement(MemoComponent, newProps);
-      };
+      });
     },
     Component => Component
   );
@@ -260,40 +404,105 @@ class State {
   }
 
   compute(states, computer, { onError, ...options } = {}) {
-    subscribe(
-      states,
-      () => {
-        // prevent recursive calling
-        if (this.__isComputing) return;
-        this.__isComputing = true;
-        // create token for each computing session
-        this.__computingToken = {};
-        try {
-          const result = computer(...states.map(state => state.__getValue()));
-          // async result
-          if (result && result.then) {
-            // save current token for late comparison
-            const token = this.__computingToken;
-            result.then(payload => {
+    const compute = () => {
+      // prevent recursive calling
+      if (this.__isComputing) return;
+      this.__isComputing = true;
+      // create token for each computing session
+      this.__computingToken = {};
+      try {
+        const result = computer(...states.map(state => state.__getValue()));
+        // async result
+        if (result && result.then) {
+          if (this.__async) {
+            this.value = asyncLoading;
+          }
+          // save current token for late comparison
+          const token = this.__computingToken;
+          result.then(
+            data => {
               // if saved token is diff with current token
               // that means there is a new computing call since last time
               if (token !== this.__computingToken) {
                 return;
               }
-              this.value = payload;
-            }, onError);
-          } else {
-            this.value = result;
-          }
-        } catch (e) {
-          onError && onError(e);
-        } finally {
-          this.__isComputing = false;
+              if (this.__async) {
+                this.value = {
+                  loading: false,
+                  done: true,
+                  data,
+                  error: undefined
+                };
+              } else {
+                this.value = data;
+              }
+            },
+            error => {
+              if (this.__async) {
+                this.value = {
+                  loading: false,
+                  done: true,
+                  data,
+                  error
+                };
+              }
+              onError && onError(error);
+            }
+          );
+        } else {
+          this.value = result;
         }
-      },
-      options
-    );
+      } catch (e) {
+        onError && onError(e);
+      } finally {
+        this.__isComputing = false;
+      }
+    };
+
+    subscribe(states, compute, options);
+
+    compute();
+
+    return this;
   }
+
+  async(promise) {
+    if (!arguments.length) {
+      // mark state as async state
+      this.__async = true;
+      return this.mutate(value =>
+        typeof value === "undefined"
+          ? asyncInitial
+          : { loading: false, done: true, data: value, error: undefined }
+      );
+    }
+
+    const token = (this.__currentPromiseToken = {});
+    this.value = asyncLoading;
+    promise.then(
+      data =>
+        token === this.__currentPromiseToken &&
+        (this.value = {
+          loading: false,
+          done: true,
+          data,
+          error: undefined
+        }),
+      error =>
+        token === this.__currentPromiseToken &&
+        (this.value = {
+          loading: false,
+          done: true,
+          error,
+          data: undefined
+        })
+    );
+    return this;
+  }
+}
+
+function arrayEqual(a, b) {
+  return a.length === b.length && a.every((i, index) => i === b[index]);
 }
 
 function notify(subscriptions, ...args) {
@@ -343,6 +552,18 @@ function setValues(stateMap, data = {}) {
       }
     });
   });
+}
+
+function unmount(...callback) {
+  unmountEffects && unmountEffects.push(...callback);
+}
+
+function one(...actions) {
+  oneEffects && oneEffects.push(...actions);
+}
+
+function many(action, argsResolver) {
+  manyEffects.push([action, argsResolver]);
 }
 
 function subscribe(
@@ -634,7 +855,10 @@ Object.assign(main, {
   clone,
   subscribe,
   get: getValues,
-  set: setValues
+  set: setValues,
+  one,
+  many,
+  unmount
 });
 
 export default main;
