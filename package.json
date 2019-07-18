@@ -1,0 +1,88 @@
+{
+  "name": "react-xs",
+  "version": "1.0.2",
+  "description": "Minimalism state manager",
+  "main": "src/react-xs.js",
+  "scripts": {
+    "test": "jest",
+    "$publish": "npm publish"
+  },
+  "keywords": [
+    "react",
+    "redux",
+    "state management",
+    "state manager",
+    "state",
+    "manager",
+    "store",
+    "flux"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linq2js/react-xs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/linq2js/react-xs/issues"
+  },
+  "homepage": "https://github.com/linq2js/react-xs#readme",
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react"
+    ],
+    "plugins": [
+      [
+        "@babel/plugin-transform-runtime",
+        {
+          "regenerator": true
+        }
+      ],
+      [
+        "module-resolver",
+        {
+          "root": [
+            "./src"
+          ],
+          "alias": {
+            "react-xs": "./"
+          }
+        }
+      ]
+    ]
+  },
+  "jest": {
+    "transform": {
+      ".*": "<rootDir>/node_modules/babel-jest"
+    },
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/react",
+      "<rootDir>/node_modules/react-dom",
+      "<rootDir>/node_modules/react-addons-test-utils",
+      "<rootDir>/node_modules/fbjs"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!@ngrx|(?!deck.gl)|ng-dynamic)"
+    ]
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "@babel/plugin-transform-runtime": "^7.4.4",
+    "babel-plugin-module-resolver": "^3.2.0",
+    "@babel/runtime": "^7.4.5",
+    "jest": "^24.8.0",
+    "prettier": "^1.18.2",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "@testing-library/react": "^8.0.4",
+    "react-testing-library": "^8.0.1",
+    "jest-dom": "^3.5.0",
+    "@babel/preset-react": "^7.0.0",
+    "@testing-library/react-hooks": "^1.1.0",
+    "node-fetch": "^2.6.0",
+    "react-test-renderer": "^16.8.6"
+  }
+}
