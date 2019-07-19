@@ -4,6 +4,21 @@ import $ from "react-xs";
 
 afterEach(cleanup);
 
+test("Getting substate value directly, no value prop needed", () => {
+  const parent = $({});
+  const sub = $({ address: "abc" });
+  const callback = jest.fn();
+  parent.set("street", sub);
+  parent.subscribe(callback);
+  sub.subscribe(callback);
+
+  expect(parent.get`street.address`).toBe("abc");
+  sub.set("address", "def");
+  expect(sub.get("address")).toBe("def");
+  expect(parent.get("street")).toEqual({ address: "def" });
+  expect(callback.mock.calls.length).toBe(1);
+});
+
 test("Should notify change one time when update multiple states", () => {
   const state1 = $(0);
   const state2 = $(0);

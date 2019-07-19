@@ -27,10 +27,8 @@ import $ from "react-xs";
 const count = $(1);
 const Counter = $(() => (
   <>
-    <h1 data-testid="value">{count.value}</h1>
-    <button data-testid="button" onClick={() => count.value++}>
-      Increase
-    </button>
+    <h1>{count.value}</h1>
+    <button onClick={() => count.value++}>Increase</button>
   </>
 ));
 render(<Counter />, document.getElementById("root"));
@@ -349,7 +347,11 @@ const LoadUserProfile = () => {
     return;
   }
   // update state once promise resolved/rejected
-  userProfile.async(fetch("http://www.mocky.io/v2/5d30858e320000ad57204578"));
+  userProfile.async(
+    fetch("https://demo9029075.mockable.io/react-xs-user-profile").then(res =>
+      res.json()
+    )
+  );
 };
 
 const UserProfileComponent = $(() => {
@@ -357,7 +359,7 @@ const UserProfileComponent = $(() => {
 
   return (
     <div>
-      {userProfile.get`done`
+      {userProfile.get`loading`
         ? "Loading..."
         : JSON.stringify(userProfile.get`data`)}
     </div>

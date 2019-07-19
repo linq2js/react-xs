@@ -311,6 +311,8 @@ class State {
         return tryEval &&
           (typeof parentValue === "undefined" || parentValue === null)
           ? undefined
+          : parentValue instanceof State
+          ? parentValue.value[this.__prop]
           : parentValue[this.__prop];
       }
 
@@ -328,6 +330,9 @@ class State {
     };
 
     this.__getSubState = prop => {
+      if (this.__value && this.__value[prop] instanceof State)
+        return this.__value[prop];
+
       let subState = this.__subStates.get(prop);
       if (!subState) {
         this.__subStates.set(
@@ -341,6 +346,14 @@ class State {
       }
       return subState;
     };
+  }
+
+  /**
+   * get substate without making state binding
+   * @param prop
+   */
+  sub(prop) {
+    return this.__value ? this.__value[prop] : undefined;
   }
 
   prop(strings) {
