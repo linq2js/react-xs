@@ -376,13 +376,10 @@ const LoadUserProfile = () => {
 const UserProfileComponent = $(() => {
   $.one(LoadUserProfile);
 
-  return (
-    <div>
-      {userProfile.get`loading`
-        ? "Loading..."
-        : JSON.stringify(userProfile.get`data`)}
-    </div>
-  );
+  return userProfile.async({
+    loading: "Loading...",
+    done: data => JSON.stringify(data)
+  });
 });
 
 render(<UserProfileComponent />, document.getElementById("root"));

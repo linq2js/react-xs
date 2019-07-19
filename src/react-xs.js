@@ -378,6 +378,15 @@ Object.defineProperty(State.prototype, "value", {
   }
 });
 
+Object.defineProperty(State.prototype, "inputProps", {
+  get() {
+    return {
+      value: this.value,
+      onChange: this.handleChange
+    };
+  }
+});
+
 Object.assign(State.prototype, {
   prop(strings) {
     const path = Array.isArray(strings) ? strings[0] : strings;
@@ -488,6 +497,28 @@ Object.assign(State.prototype, {
           ? asyncInitial
           : { loading: false, done: false, data: value, error: undefined }
       );
+    }
+
+    if (promise && !promise.then) {
+      const { done, loading, error, fallback } = promise;
+      const value = this.value || {};
+      if (value.done && typeof done !== "undefined") {
+        return typeof done === "function" ? done(value.data) : done;
+      }
+
+      if (value.loading && typeof loading !== "undefined") {
+        return typeof loading === "function" ? loading() : loading;
+      }
+
+      if (value.error && typeof error !== "undefined") {
+        return typeof error === "function" ? error(value.error) : error;
+      }
+
+      return typeof fallback === "function"
+        ? fallback()
+        : typeof fallback === "undefined"
+        ? null
+        : fallback;
     }
 
     const token = (this.__currentPromiseToken = {});
@@ -614,6 +645,13 @@ function subscribe(
     unsubscribes.forEach(unsubscribe => unsubscribe());
   };
 }
+
+// element helpers
+Object.assign(State.prototype, {
+  handleChange(e) {
+    this.value = e.target.value;
+  }
+});
 
 /**
  * array helpers
