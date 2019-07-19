@@ -374,11 +374,13 @@ const LoadUserProfile = () => {
 };
 
 const UserProfileComponent = $(() => {
+  // dispatch LoadUserProfile once when component did mount
   $.one(LoadUserProfile);
 
+  // render userProfile according to its states
   return userProfile.async({
     loading: "Loading...",
-    done: data => JSON.stringify(data)
+    success: data => JSON.stringify(data)
   });
 });
 

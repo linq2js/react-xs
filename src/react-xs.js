@@ -500,14 +500,20 @@ Object.assign(State.prototype, {
     }
 
     if (promise && !promise.then) {
-      const { done, loading, error, fallback } = promise;
+      const { done, loading, success, error, fallback } = promise;
       const value = this.value || {};
       if (value.done && typeof done !== "undefined") {
-        return typeof done === "function" ? done(value.data) : done;
+        return typeof done === "function"
+          ? done(value.data, value.error)
+          : done;
       }
 
       if (value.loading && typeof loading !== "undefined") {
         return typeof loading === "function" ? loading() : loading;
+      }
+
+      if (!value.error && value.done && typeof success !== "undefined") {
+        return typeof success === "function" ? success(value.data) : success;
       }
 
       if (value.error && typeof error !== "undefined") {
