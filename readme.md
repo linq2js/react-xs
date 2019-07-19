@@ -70,8 +70,8 @@ render(
 
 ## Todo App (Performance test)
 
-Please refer this [link](https://sr4h3.codesandbox.io/) , an example runs with 5000 todo items (over 20.000 elements).
-User can update todo text on the fly, without lagging. Redux or other state managers get lag with 1000-2000 todo items
+Please refer this [link](https://codesandbox.io/s/react-xs-perf-test-efxui) , an example runs with 7000 todo items (over 20.000 elements).
+User can update todo text on the fly, without lagging. Redux or other state managers(Mobx, unstated) get lag with 1000-5000 todo items
 
 ## Creating simple state
 
