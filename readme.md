@@ -368,3 +368,89 @@ const UserProfileComponent = $(() => {
 
 render(<UserProfileComponent />, document.getElementById("root"));
 ```
+
+## Best practice
+
+Sometimes we try to split our app to many modules, it is hard for other state management libraries.
+Here is sample project structure if you are using react-xs
+
+<pre>
+    src/
+        modules/
+            counter/
+                components/
+                    Counter/
+                        container.js
+                        index.js
+                states.js
+                actions.js
+        index.js
+</pre>
+
+### modules/counter/states.js
+
+```jsx harmony
+import $ from "react-xs";
+export const CountState = $(0);
+```
+
+### modules/counter/actions.js
+
+```jsx harmony
+import { CountState } from "./state.js";
+
+export function Increase() {
+  CountState.value++;
+}
+
+export function Decrease() {
+  CountState.value--;
+}
+
+export async function Load() {
+  const payload = await fetch(
+    "https://demo9029075.mockable.io/react-xs-counter"
+  ).then(res => res.json());
+
+  CountState.value = payload.count;
+}
+
+// auto increase count each 3s
+setInterval(Increase, 3000);
+```
+
+### modules/counter/components/container.js
+
+```jsx harmony
+import { CountState } from "../state.js";
+import { Increase, Decrease, Load } from "../actions.js";
+import $ from "react-xs";
+
+export default $.hoc(props => {
+  return {
+    ...props,
+    count: CountState.value,
+    increase: Increase,
+    decrease: Decrease,
+    load: Load
+  };
+});
+```
+
+### modules/counter/components/index.js
+
+```jsx harmony
+import React from "react";
+import container from "./container";
+
+export default container(({ count, increase, decrease, load }) => {
+  return (
+    <>
+      <h1>{count}</h1>
+      <button onClick={increase}>Increase</button>
+      <button onClick={decrease}>Decrease</button>
+      <button onClick={load}>Load</button>
+    </>
+  );
+});
+```
