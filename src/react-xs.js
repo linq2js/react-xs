@@ -66,131 +66,18 @@ function createComponent(
     : undefined;
 
   function Wrapper(props) {
-    const [, forceRerender] = useState();
-    const propsRef = useRef();
-    // we use this ref to store current required states
-    // this stack will cleanup once component re-render
-    const currentRequiredStateStackRef = useRef();
-    const prevValuesRef = useRef([]);
-    const exceptionRef = useRef();
-    const unsubscribesRef = useRef([]);
-    const manyEffectArgsRef = useRef([]);
-    const cleanup = useCallback(() => {
-      unsubscribesRef.current.forEach(unsubscribe => unsubscribe());
-      for (const state of currentRequiredStateStackRef.current) {
-        if (state.__requireStack === currentRequiredStateStackRef.current) {
-          delete state.__requireStack;
-        }
-      }
-      currentRequiredStateStackRef.current.clear();
-    }, []);
-    const actionMap = useMemo(() => {
-      if (!actionEntries) return undefined;
-      const actions = {};
-      actionEntries.forEach(
-        entry =>
-          (actions[entry[0]] = (...args) =>
-            mutate(() => entry[1](propsRef.current, ...args)))
-      );
-    }, []);
-    const checkForUpdates = useCallback(() => {
-      let hasChange = false;
+    // noinspection JSConstructorReturnsPrimitive
+    return useBinding(() => {
+      const actionMap = useMemo(() => {
+        if (!actionEntries) return undefined;
+        const actions = {};
+        actionEntries.forEach(
+          entry =>
+            (actions[entry[0]] = (...args) =>
+              mutate(() => entry[1](props, ...args)))
+        );
+      }, []);
 
-      try {
-        let index = 0;
-        for (const state of currentRequiredStateStackRef.current) {
-          const prevValue = prevValuesRef.current[index];
-          const currentValue = state.value;
-          if (currentValue !== prevValue) {
-            hasChange = true;
-            break;
-          }
-          index++;
-        }
-      } catch (e) {
-        exceptionRef.current = e;
-      }
-
-      if (hasChange) {
-        cleanup();
-        forceRerender({});
-      }
-    }, [cleanup]);
-    const oneEffectCalledRef = useRef(false);
-    const oneEffectsRef = useRef([]);
-    const manyEffectsRef = useRef([]);
-    const unmountEffectsRef = useRef([]);
-
-    if (exceptionRef.current) {
-      const ex = exceptionRef.current;
-      exceptionRef.current = undefined;
-      throw ex;
-    }
-
-    propsRef.current = props;
-    unmountEffectsRef.current = [];
-
-    if (!currentRequiredStateStackRef.current) {
-      // noinspection JSValidateTypes
-      currentRequiredStateStackRef.current = new Set();
-    } else {
-    }
-
-    useEffect(() => cleanup, [cleanup]);
-
-    // process one effects
-    useEffect(() => {
-      oneEffectCalledRef.current = true;
-      for (const effect of oneEffectsRef.current) {
-        effect(propsRef.current);
-      }
-
-      // process unmount effect
-      return () => {
-        unmountEffectsRef.current.forEach(unmount => unmount(propsRef.current));
-      };
-    }, []);
-
-    // process many effects
-    useEffect(() => {
-      const effects = manyEffectsRef.current;
-      manyEffectsRef.current = [];
-      effects.forEach(([action, argsResolver], index) => {
-        let args = argsResolver
-          ? // we can pass literal array as argsResolver
-            Array.isArray(argsResolver)
-            ? argsResolver
-            : argsResolver(props)
-          : [];
-        if (!Array.isArray(args)) {
-          args = [args];
-        }
-        const prevArgs = manyEffectArgsRef.current[index];
-        const effectShouldCallEveryTime =
-          typeof prevArgs === "undefined" || !argsResolver;
-        if (effectShouldCallEveryTime || !arrayEqual(prevArgs, args)) {
-          manyEffectArgsRef.current[index] = args;
-          action(...args);
-        }
-      });
-    });
-
-    // setup stacks
-    const prevRequiredStateStack = requiredStateStack;
-    requiredStateStack = currentRequiredStateStackRef.current;
-
-    const prevOneEffects = oneEffects;
-    if (!oneEffectCalledRef.current) {
-      oneEffects = oneEffectsRef.current;
-    }
-
-    const prevManyEffects = manyEffects;
-    manyEffects = manyEffectsRef.current;
-
-    const prevUnmountEffects = unmountEffects;
-    unmountEffects = unmountEffectsRef.current;
-
-    try {
       let newProps = props;
 
       if (stateEntries || oneOption || manyOption || actionMap) {
@@ -201,7 +88,7 @@ function createComponent(
             entry =>
               (newProps[entry[0]] =
                 typeof entry[1] === "function"
-                  ? entry[1](propsRef.current)
+                  ? entry[1](props)
                   : entry[1].value)
           );
         oneOption && one(...[].concat(oneOption));
@@ -225,21 +112,7 @@ function createComponent(
       unmountOption && unmount(...[].concat(unmountOption));
 
       return component(newProps);
-    } finally {
-      // restore stacks
-      requiredStateStack = prevRequiredStateStack;
-      oneEffects = prevOneEffects;
-      manyEffects = prevManyEffects;
-      unmountEffects = prevUnmountEffects;
-
-      unsubscribesRef.current = [];
-      prevValuesRef.current = [];
-
-      for (const state of currentRequiredStateStackRef.current) {
-        unsubscribesRef.current.push(state.subscribe(checkForUpdates));
-        prevValuesRef.current.push(state.value);
-      }
-    }
+    }, props);
   }
 
   return memo(Wrapper);
@@ -288,88 +161,208 @@ function hoc(...callbacks) {
   );
 }
 
-/**
- *
- */
-class State {
-  constructor(
-    defaultValue,
-    { parent, root, prop, compare = defaultComparer } = {}
-  ) {
-    this.__value = defaultValue;
-    this.__subStates = new Map();
-    this.__root = root;
-    this.__prop = prop;
-    this.__parent = parent;
-    this.__compare = compare;
-    this.__subscriptions = root ? root.__subscriptions : new Set();
-
-    this.__getValue = tryEval => {
-      if (this.__parent) {
-        // try to get value from its parent
-        const parentValue = this.__parent.__getValue(tryEval);
-        return tryEval &&
-          (typeof parentValue === "undefined" || parentValue === null)
-          ? undefined
-          : parentValue instanceof State
-          ? parentValue.value[this.__prop]
-          : parentValue[this.__prop];
+function useBinding(action, props) {
+  const [, forceRerender] = useState();
+  const propsRef = useRef();
+  // we use this ref to store current required states
+  // this stack will cleanup once component re-render
+  const currentRequiredStateStackRef = useRef();
+  const prevValuesRef = useRef([]);
+  const exceptionRef = useRef();
+  const unsubscribesRef = useRef([]);
+  const manyEffectArgsRef = useRef([]);
+  const cleanup = useCallback(() => {
+    unsubscribesRef.current.forEach(unsubscribe => unsubscribe());
+    for (const state of currentRequiredStateStackRef.current) {
+      if (state.__requireStack === currentRequiredStateStackRef.current) {
+        delete state.__requireStack;
       }
+    }
+    currentRequiredStateStackRef.current.clear();
+  }, []);
 
-      return this.__value;
-    };
+  const checkForUpdates = useCallback(() => {
+    let hasChange = false;
 
-    this.__setValue = value => {
-      if (this.__parent) {
-        const clonedParentValue = clone(this.__parent.value);
-        clonedParentValue[this.__prop] = value;
-        this.__parent.__setValue(clonedParentValue);
-      } else {
-        this.__value = value;
+    try {
+      let index = 0;
+      for (const state of currentRequiredStateStackRef.current) {
+        const prevValue = prevValuesRef.current[index];
+        const currentValue = state.value;
+        if (currentValue !== prevValue) {
+          hasChange = true;
+          break;
+        }
+        index++;
       }
-    };
+    } catch (e) {
+      exceptionRef.current = e;
+    }
 
-    this.__getSubState = prop => {
-      if (this.__value && this.__value[prop] instanceof State)
-        return this.__value[prop];
+    if (hasChange) {
+      cleanup();
+      forceRerender({});
+    }
+  }, [cleanup]);
+  const oneEffectCalledRef = useRef(false);
+  const oneEffectsRef = useRef([]);
+  const manyEffectsRef = useRef([]);
+  const unmountEffectsRef = useRef([]);
 
-      let subState = this.__subStates.get(prop);
-      if (!subState) {
-        this.__subStates.set(
-          prop,
-          (subState = new State(undefined, {
-            root: this.__root || this,
-            parent: this,
-            prop
-          }))
-        );
-      }
-      return subState;
-    };
+  if (exceptionRef.current) {
+    const ex = exceptionRef.current;
+    exceptionRef.current = undefined;
+    throw ex;
   }
 
-  prop(strings) {
-    const path = Array.isArray(strings) ? strings[0] : strings;
-    return path
-      .toString()
-      .split(".")
-      .reduce((parent, prop) => parent.__getSubState(prop), this);
+  propsRef.current = props;
+  unmountEffectsRef.current = [];
+
+  if (!currentRequiredStateStackRef.current) {
+    // noinspection JSValidateTypes
+    currentRequiredStateStackRef.current = new Set();
+  } else {
   }
 
-  get(path) {
-    if (!path) return this.value;
-    return this.prop(path).value;
+  useEffect(() => cleanup, [cleanup]);
+
+  // process one effects
+  useEffect(() => {
+    oneEffectCalledRef.current = true;
+    for (const effect of oneEffectsRef.current) {
+      effect(propsRef.current);
+    }
+
+    // process unmount effect
+    return () => {
+      unmountEffectsRef.current.forEach(unmount => unmount(propsRef.current));
+    };
+  }, []);
+
+  // process many effects
+  useEffect(() => {
+    const effects = manyEffectsRef.current;
+    manyEffectsRef.current = [];
+    effects.forEach(([action, argsResolver], index) => {
+      let args = argsResolver
+        ? // we can pass literal array as argsResolver
+          Array.isArray(argsResolver)
+          ? argsResolver
+          : argsResolver(props)
+        : [];
+      if (!Array.isArray(args)) {
+        args = [args];
+      }
+      const prevArgs = manyEffectArgsRef.current[index];
+      const effectShouldCallEveryTime =
+        typeof prevArgs === "undefined" || !argsResolver;
+      if (effectShouldCallEveryTime || !arrayEqual(prevArgs, args)) {
+        manyEffectArgsRef.current[index] = args;
+        action(...args);
+      }
+    });
+  });
+
+  // setup stacks
+  const prevRequiredStateStack = requiredStateStack;
+  requiredStateStack = currentRequiredStateStackRef.current;
+
+  const prevOneEffects = oneEffects;
+  if (!oneEffectCalledRef.current) {
+    oneEffects = oneEffectsRef.current;
   }
 
-  get value() {
+  const prevManyEffects = manyEffects;
+  manyEffects = manyEffectsRef.current;
+
+  const prevUnmountEffects = unmountEffects;
+  unmountEffects = unmountEffectsRef.current;
+
+  try {
+    return action(propsRef.current);
+  } finally {
+    // restore stacks
+    requiredStateStack = prevRequiredStateStack;
+    oneEffects = prevOneEffects;
+    manyEffects = prevManyEffects;
+    unmountEffects = prevUnmountEffects;
+
+    unsubscribesRef.current = [];
+    prevValuesRef.current = [];
+
+    for (const state of currentRequiredStateStackRef.current) {
+      unsubscribesRef.current.push(state.subscribe(checkForUpdates));
+      prevValuesRef.current.push(state.value);
+    }
+  }
+}
+
+function State(
+  defaultValue,
+  { parent, root, prop, compare = defaultComparer } = {}
+) {
+  this.__value = defaultValue;
+  this.__subStates = new Map();
+  this.__root = root;
+  this.__prop = prop;
+  this.__parent = parent;
+  this.__compare = compare;
+  this.__subscriptions = root ? root.__subscriptions : new Set();
+
+  this.__getValue = tryEval => {
+    if (this.__parent) {
+      // try to get value from its parent
+      const parentValue = this.__parent.__getValue(tryEval);
+      return tryEval &&
+        (typeof parentValue === "undefined" || parentValue === null)
+        ? undefined
+        : parentValue instanceof State
+        ? parentValue.value[this.__prop]
+        : parentValue[this.__prop];
+    }
+
+    return this.__value;
+  };
+
+  this.__setValue = value => {
+    if (this.__parent) {
+      const clonedParentValue = clone(this.__parent.value);
+      clonedParentValue[this.__prop] = value;
+      this.__parent.__setValue(clonedParentValue);
+    } else {
+      this.__value = value;
+    }
+  };
+
+  this.__getSubState = prop => {
+    if (this.__value && this.__value[prop] instanceof State)
+      return this.__value[prop];
+
+    let subState = this.__subStates.get(prop);
+    if (!subState) {
+      this.__subStates.set(
+        prop,
+        (subState = new State(undefined, {
+          root: this.__root || this,
+          parent: this,
+          prop
+        }))
+      );
+    }
+    return subState;
+  };
+}
+
+Object.defineProperty(State.prototype, "value", {
+  get() {
     if (requiredStateStack && this.__requireStack !== requiredStateStack) {
       this.__requireStack = requiredStateStack;
       requiredStateStack.add(this);
     }
     return this.__getValue();
-  }
+  },
 
-  set value(value) {
+  set(value) {
     const currentValue = this.__getValue(true);
     if (this.__compare(value, currentValue)) return;
 
@@ -383,21 +376,36 @@ class State {
       notify(this.__subscriptions, value);
     }
   }
+});
+
+Object.assign(State.prototype, {
+  prop(strings) {
+    const path = Array.isArray(strings) ? strings[0] : strings;
+    return path
+      .toString()
+      .split(".")
+      .reduce((parent, prop) => parent.__getSubState(prop), this);
+  },
+
+  get(path) {
+    if (!path) return this.value;
+    return this.prop(path).value;
+  },
 
   subscribe(subscription, { debounce = false } = {}) {
     subscription = createDebouncedFunction(subscription, debounce);
     this.__subscriptions.add(subscription);
     return () => this.__subscriptions.delete(subscription);
-  }
+  },
 
   unsubscribe(subscription) {
     this.__subscriptions.delete(subscription);
-  }
+  },
 
   tap(action) {
     action(this, this.__getValue());
     return this;
-  }
+  },
 
   mutate(action, needClone) {
     const target = needClone
@@ -406,7 +414,7 @@ class State {
     const result = action(target);
     this.value = needClone ? target : result;
     return this;
-  }
+  },
 
   compute(states, computer, { onError, ...options } = {}) {
     const compute = () => {
@@ -469,7 +477,7 @@ class State {
     compute();
 
     return this;
-  }
+  },
 
   async(promise) {
     if (!arguments.length) {
@@ -510,7 +518,7 @@ class State {
 
     !done && (this.value = asyncLoading);
     return this;
-  }
+  },
 
   batch(modifiers) {
     mutate(() => {
@@ -526,7 +534,7 @@ class State {
     });
     return this;
   }
-}
+});
 
 function arrayEqual(a, b) {
   return a.length === b.length && a.every((i, index) => i === b[index]);
@@ -711,6 +719,19 @@ extend({
     }
     this.value = array;
     return this;
+  },
+  filterMap(predicate, mapper) {
+    return this.mutate(array => array.filter(predicate).map(mapper));
+  },
+  mapReduce(mapper, reducer) {
+    return this.mutate(array => array.map(mapper).reduce(reducer));
+  },
+  swap(sourceIndex, destIndex) {
+    return this.mutate(array => {
+      const temp = array[sourceIndex];
+      array[sourceIndex] = array[destIndex];
+      array[destIndex] = temp;
+    }, true);
   }
 });
 
@@ -888,7 +909,8 @@ Object.assign(main, {
   set: setValues,
   one,
   many,
-  unmount
+  unmount,
+  bind: useBinding
 });
 
 export default main;

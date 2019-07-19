@@ -14,7 +14,10 @@ Minimalism state manager
 | connect() HOC             |          |   ✓   |
 | State Mappings / Bindings |          |   ✓   |
 
+### react-xs has nothing special but it is powerful, easy to use, reduce code complexity and great performance
+
 ## Table of contents
+
 1. [Counter App](#counter-app)
 1. [Todo App](#todo-app-performance-test)
 1. [Creating simple state](#creating-simple-state)
@@ -31,8 +34,6 @@ Minimalism state manager
 1. [Dispatching function one time when component did mount](#dispatching-function-one-time-when-component-did-mount)
 1. [Best practice](#best-practice)
 1. [API](#api)
-
-### react-xs has nothing special but it is powerful, easy to use, reduce code complexity
 
 ## Counter App
 
