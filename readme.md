@@ -14,6 +14,24 @@ Minimalism state manager
 | connect() HOC             |          |   ✓   |
 | State Mappings / Bindings |          |   ✓   |
 
+## Table of contents
+1. [Counter App](#counter-app)
+1. [Todo App](#todo-app-performance-test)
+1. [Creating simple state](#creating-simple-state)
+1. [Handling state change](#handling-state-change)
+1. [Getting state value](#getting-state-value)
+1. [Sub States](#sub-states)
+1. [Binding states to component](#binding-states-to-component)
+1. [Mutating multiple states and performance issue](#mutating-multiple-states-and-performance-issue)
+1. [Mutating state using helpers](#mutating-state-using-helpers)
+1. [Handling multiple states change](#handling-multiple-states-change)
+1. [Computed state](#computed-state)
+1. [Getting values of multiple states](#getting-values-of-multiple-states)
+1. [Update values of multiple states](#update-values-of-multiple-states)
+1. [Dispatching function one time when component did mount](#dispatching-function-one-time-when-component-did-mount)
+1. [Best practice](#best-practice)
+1. [API](#api)
+
 ### react-xs has nothing special but it is powerful, easy to use, reduce code complexity
 
 ## Counter App
@@ -70,7 +88,7 @@ render(
 
 ## Todo App (Performance test)
 
-Please refer this [link](https://codesandbox.io/s/react-xs-perf-test-efxui) , an example runs with 7000 todo items (over 20.000 elements).
+Please refer this [link](https://codesandbox.io/s/react-xs-perf-test-efxui) , an example runs with 7000 todo items (over 28.000 elements).
 User can update todo text on the fly, without lagging. Redux or other state managers(Mobx, unstated) get lag with 1000-5000 todo items
 
 ## Creating simple state
@@ -454,3 +472,5 @@ export default container(({ count, increase, decrease, load }) => {
   );
 });
 ```
+
+## API

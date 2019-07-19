@@ -348,14 +348,6 @@ class State {
     };
   }
 
-  /**
-   * get substate without making state binding
-   * @param prop
-   */
-  sub(prop) {
-    return this.__value ? this.__value[prop] : undefined;
-  }
-
   prop(strings) {
     const path = Array.isArray(strings) ? strings[0] : strings;
     return path
@@ -519,6 +511,21 @@ class State {
     !done && (this.value = asyncLoading);
     return this;
   }
+
+  batch(modifiers) {
+    mutate(() => {
+      modifiers.forEach(modifier => {
+        if (typeof modifier === "function") {
+          modifier = modifier(this.__getValue());
+        }
+        const [method, ...args] = Array.isArray(modifier)
+          ? modifier
+          : [modifier];
+        this[method](...args);
+      });
+    });
+    return this;
+  }
 }
 
 function arrayEqual(a, b) {
@@ -670,6 +677,9 @@ extend({
   },
   reduceRight(...args) {
     return this.mutate(array => array.reduceRight(...args));
+  },
+  reverse(...args) {
+    return this.mutate(array => array.reverse(...args), true);
   },
   slice(...args) {
     return this.mutate(array => array.slice(...args));
