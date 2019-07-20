@@ -10,7 +10,7 @@ import {
 } from "react";
 
 let requiredStateStack;
-let mutationSubscriptions = new Set();
+let mutationSubscriptionGroups = new Set();
 let oneEffects;
 let manyEffects;
 let unmountEffects;
@@ -162,36 +162,64 @@ function hoc(...callbacks) {
   );
 }
 
-function bindClassComponent(component, ...states) {
-  if (!component.__originalComponentWillUnmount) {
-    component.__originalComponentWillUnmount = component.componentWillUnmount;
-    component.__states = new Set();
-    component.__subscription = () => {
-      if (component.__unmount) return;
-      component.setState({});
-    };
-    component.componentWillUnmount = () => {
-      component.__unmount = true;
-      for (const state of component.__states) {
-        state.unsubscribe(component.__subscription);
+function bindClassComponent(component) {
+  const originalRender = component.render;
+  const originalWillUnmount = component.componentWillUnmount;
+  let prevValues;
+  let states;
+  let lastError;
+  const cleanup = () => {
+    if (!states) return;
+    for (const state of states) {
+      state.unsubscribe(checkForUpdates);
+    }
+  };
+  const checkForUpdates = () => {
+    try {
+      const nextValues = [];
+      for (const state of states) {
+        nextValues.push(state.__getValue());
       }
-      component.__originalComponentWillUnmount &&
-        component.__originalComponentWillUnmount();
-    };
-  }
-  const values = [];
-  for (const state of states) {
-    component.__states.add(state);
-    state.subscribe(component.__subscription);
-    values.push(state.__getValue());
-  }
-  return values;
+      if (!arrayEqual(nextValues, prevValues)) {
+        cleanup();
+        component.setState({});
+      }
+    } catch (e) {
+      lastError = e;
+      component.setState({});
+    }
+  };
+
+  component.render = () => {
+    if (lastError) {
+      const e = lastError;
+      lastError = undefined;
+      throw e;
+    }
+    const prevRequiredStates = requiredStateStack;
+    requiredStateStack = states = new Set();
+    try {
+      return originalRender();
+    } finally {
+      requiredStateStack = prevRequiredStates;
+      prevValues = [];
+      for (const state of states) {
+        state.subscribe(checkForUpdates);
+        prevValues.push(state.__getValue());
+      }
+    }
+  };
+
+  component.componentWillUnmount = () => {
+    cleanup();
+    originalWillUnmount && originalWillUnmount();
+  };
 }
 
-function useBinding(action, props, ...args) {
+function useBinding(action, props) {
   // do binding for class component
   if (action instanceof Component) {
-    return bindClassComponent(action, props, ...args);
+    return bindClassComponent(action);
   }
   const [, forceRerender] = useState();
   const propsRef = useRef();
@@ -400,9 +428,7 @@ Object.defineProperty(State.prototype, "value", {
     this.__setValue(value);
 
     if (mutationScopes) {
-      for (const subscription of this.__subscriptions) {
-        mutationSubscriptions.add(subscription);
-      }
+      mutationSubscriptionGroups.add(this.__subscriptions);
     } else {
       notify(this.__subscriptions, value);
     }
@@ -621,8 +647,14 @@ function mutate(functor) {
   } finally {
     mutationScopes--;
     if (!mutationScopes) {
-      const subscriptions = mutationSubscriptions;
-      mutationSubscriptions = new Set();
+      const groups = mutationSubscriptionGroups;
+      mutationSubscriptionGroups = new Set();
+      const subscriptions = new Set();
+      for (const group of groups) {
+        for (const subscription of group) {
+          subscriptions.add(subscription);
+        }
+      }
       notify(subscriptions);
     }
   }

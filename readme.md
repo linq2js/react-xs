@@ -473,7 +473,7 @@ export default container(({ count, increase, decrease, load }) => {
 });
 ```
 
-## Working class component
+## Working with class component
 
 You can use react-xs with any component types, even class component.
 That helps you bring react-xs power to old components and refactor them all to functional components later
@@ -486,15 +486,14 @@ import $ from "react-xs";
 const Count = $(0);
 const Increase = () => Count.value++;
 class Counter extends Component {
-  render() {
-    const [count] = $.bind(this, Count);
-    return (
-      <>
-        <h1>{count}</h1>
-        <button onClick={Increase}>Increase</button>
-      </>
-    );
-  }
+  _ = $.bind(this);
+
+  render = () => (
+    <>
+      <h1>{Count.value}</h1>
+      <button onClick={Increase}>Increase</button>
+    </>
+  );
 }
 render(<Counter />, document.getElementById("root"));
 ```
