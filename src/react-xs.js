@@ -5,7 +5,8 @@ import {
   useEffect,
   useState,
   createElement,
-  useMemo
+  useMemo,
+  Component
 } from "react";
 
 let requiredStateStack;
@@ -161,7 +162,37 @@ function hoc(...callbacks) {
   );
 }
 
-function useBinding(action, props) {
+function bindClassComponent(component, ...states) {
+  if (!component.__originalComponentWillUnmount) {
+    component.__originalComponentWillUnmount = component.componentWillUnmount;
+    component.__states = new Set();
+    component.__subscription = () => {
+      if (component.__unmount) return;
+      component.setState({});
+    };
+    component.componentWillUnmount = () => {
+      component.__unmount = true;
+      for (const state of component.__states) {
+        state.unsubscribe(component.__subscription);
+      }
+      component.__originalComponentWillUnmount &&
+        component.__originalComponentWillUnmount();
+    };
+  }
+  const values = [];
+  for (const state of states) {
+    component.__states.add(state);
+    state.subscribe(component.__subscription);
+    values.push(state.__getValue());
+  }
+  return values;
+}
+
+function useBinding(action, props, ...args) {
+  // do binding for class component
+  if (action instanceof Component) {
+    return bindClassComponent(action, props, ...args);
+  }
   const [, forceRerender] = useState();
   const propsRef = useRef();
   // we use this ref to store current required states
