@@ -75,7 +75,7 @@ function createComponent(
         actionEntries.forEach(
           entry =>
             (actions[entry[0]] = (...args) =>
-              mutate(() => entry[1](props, ...args)))
+              dispatch(entry[1], props, ...args))
         );
       }, []);
 
@@ -288,7 +288,7 @@ function useBinding(action, props) {
   useEffect(() => {
     oneEffectCalledRef.current = true;
     for (const effect of oneEffectsRef.current) {
-      effect(propsRef.current);
+      dispatch(effect, propsRef.current);
     }
 
     // process unmount effect
@@ -301,7 +301,7 @@ function useBinding(action, props) {
   useEffect(() => {
     const effects = manyEffectsRef.current;
     manyEffectsRef.current = [];
-    effects.forEach(([action, argsResolver], index) => {
+    effects.forEach(([effect, argsResolver], index) => {
       let args = argsResolver
         ? // we can pass literal array as argsResolver
           Array.isArray(argsResolver)
@@ -316,7 +316,7 @@ function useBinding(action, props) {
         typeof prevArgs === "undefined" || !argsResolver;
       if (effectShouldCallEveryTime || !arrayEqual(prevArgs, args)) {
         manyEffectArgsRef.current[index] = args;
-        action(...args);
+        dispatch(effect, ...args);
       }
     });
   });
@@ -680,6 +680,31 @@ function mutate(functor) {
       notify(subscriptions);
     }
   }
+}
+
+function dispatch(action, ...args) {
+  if (action.then) {
+    return action.then(
+      payload => {
+        args[0] && dispatch(args[0], payload);
+        return payload;
+      },
+      error => {
+        args[1] && dispatch(args[1], error);
+        return error;
+      }
+    );
+  }
+
+  if (Array.isArray(action)) {
+    return dispatch(...action , ...args);
+  }
+  let result = undefined;
+  mutate(() => {
+    result = action(...args);
+  });
+
+  return result;
 }
 
 function clone(value) {
@@ -1057,9 +1082,13 @@ Object.assign(main, {
   get: getValues,
   set: setValues,
   one,
+  once: one,
   many,
+  multiple: many,
   unmount,
-  bind: useBinding
+  bind: useBinding,
+  dispatch,
+  call: dispatch
 });
 
 export default main;
