@@ -132,11 +132,10 @@ function compose(...functions) {
 }
 
 function hoc(...callbacks) {
-  if (
-    callbacks[0] &&
-    typeof callbacks[0] !== "function" &&
-    !callbacks[0].styledComponentId
-  ) {
+  if (callbacks[0] && typeof callbacks[0] !== "function") {
+    if (callbacks[0].styledComponentId) {
+      throw new Error("Not support styled component");
+    }
     return component => createComponent(component, callbacks[0]);
   }
 
@@ -673,7 +672,7 @@ function getValues(stateMap) {
   const result = {};
 
   Object.entries(stateMap).forEach(entry => {
-    stateMap[entry[0]] = entry[1].value;
+    result[entry[0]] = entry[1].value;
   });
 
   return result;
@@ -742,24 +741,14 @@ extend({
     return this.mutate(array => array.push(...args), true);
   },
   pop() {
-    let result = undefined;
-    this.mutate(array => {
-      result = array.pop();
-      return array;
-    }, true);
-    return result;
+    return this.mutate(array => array.pop(), true);
   },
   shift() {
-    let result = undefined;
-    this.mutate(array => {
-      result = array.shift();
-      return array;
-    }, true);
-    return result;
+    return this.mutate(array => array.shift(), true);
   },
   unshift(...args) {
     if (!args.length) return this;
-    return this.mutate(array => array.push(...args), true);
+    return this.mutate(array => array.unshift(...args), true);
   },
   splice(...args) {
     let result = undefined;
@@ -771,6 +760,48 @@ extend({
   },
   filter(predicate) {
     return this.mutate(array => array.filter(predicate));
+  },
+  /**
+   * orderBy(prop, desc)
+   * orderBy({
+   *   prop1: true // desc
+   *   prop2: false // asc
+   * })
+   *
+   * orderBy([func, true], [func, false])
+   */
+  orderBy(...args) {
+    // { prop1: boolean, prop2: false }
+    if (!Array.isArray(args[0])) {
+      if (typeof args[0] === "object") {
+        args = Object.entries(args[0]);
+      } else {
+        args = [[args[0], args[1]]];
+      }
+    }
+    // normalize args
+    args = args.map(([prop, desc]) => [
+      typeof prop === "function" ? prop : obj => obj[prop],
+      desc
+    ]);
+
+    return this.mutate(
+      array =>
+        array.sort((a, b) => {
+          for (const [func, desc] of args) {
+            const aValue = func(a);
+            const bValue = func(b);
+            if (aValue === bValue) {
+              continue;
+            }
+            if (aValue > bValue) {
+              return desc ? -1 : 1;
+            }
+            return desc ? 1 : -1;
+          }
+        }),
+      true
+    );
   },
   sort(sorter) {
     return this.mutate(array => array.sort(sorter), true);
@@ -786,12 +817,6 @@ extend({
   },
   map(...args) {
     return this.mutate(array => array.map(...args));
-  },
-  reduce(...args) {
-    return this.mutate(array => array.reduce(...args));
-  },
-  reduceRight(...args) {
-    return this.mutate(array => array.reduceRight(...args));
   },
   reverse(...args) {
     return this.mutate(array => array.reverse(...args), true);
@@ -829,9 +854,6 @@ extend({
   },
   filterMap(predicate, mapper) {
     return this.mutate(array => array.filter(predicate).map(mapper));
-  },
-  mapReduce(mapper, reducer) {
-    return this.mutate(array => array.map(mapper).reduce(reducer));
   },
   swap(sourceIndex, destIndex) {
     return this.mutate(array => {
@@ -936,11 +958,16 @@ dateModifiers.W = dateModifiers.week;
 dateModifiers.h = dateModifiers.hour;
 dateModifiers.m = dateModifiers.minute;
 dateModifiers.s = dateModifiers.second;
+dateModifiers.ms = dateModifiers.milli;
 
 // value helpers
 extend({
-  add(value, duration, ...otherDateModify) {
+  add(...args) {
     return this.mutate(current => {
+      // support tuple [value, duration]
+      if (Array.isArray(args[0])) {
+        args = args.flat();
+      }
       if (current instanceof Date) {
         const modify = (date, value, duration) => {
           if (duration in dateModifiers) {
@@ -948,19 +975,14 @@ extend({
           }
           throw new Error("Invalid date duration " + duration);
         };
-        otherDateModify.unshift(value, duration);
 
-        while (otherDateModify.length) {
-          current = modify(
-            current,
-            otherDateModify.shift(),
-            otherDateModify.shift()
-          );
+        while (args.length) {
+          current = modify(current, args.shift(), args.shift());
         }
 
         return current;
       } else {
-        return current + value;
+        return current + args[0];
       }
     });
   },
@@ -983,17 +1005,14 @@ extend({
   substring(...args) {
     return this.mutate(current => current.substring(...args));
   },
-  split(...args) {
-    return this.mutate(current => current.split(...args));
-  },
   trim(...args) {
     return this.mutate(current => current.trim(...args));
   },
-  upper(...args) {
-    return this.mutate(current => current.upper(...args));
+  upper() {
+    return this.mutate(current => current.toUpperCase());
   },
-  lower(...args) {
-    return this.mutate(current => current.lower(...args));
+  lower() {
+    return this.mutate(current => current.toLowerCase());
   }
 });
 function createDebouncedFunction(func, interval = 20) {

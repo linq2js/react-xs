@@ -34,6 +34,7 @@ Minimalism state manager
 1. [Dispatching function one time when component did mount](#dispatching-function-one-time-when-component-did-mount)
 1. [Best practice](#best-practice)
 1. [API](#api)
+1. [Credits](#credits)
 
 ## Counter App
 
@@ -85,6 +86,34 @@ render(
   </Provider>,
   document.getElementById("root")
 );
+```
+
+Redux like version
+
+```jsx harmony
+import React from "react";
+import { render } from "react-dom";
+import $ from "react-xs";
+const connect = $;
+const Count = $(1);
+const Increase = () => Count.value++;
+const Counter = connect(
+  {
+    // map state to props
+    states: { count: Count },
+    // dispatch to props
+    actions: {
+      increase: Increase
+    }
+  },
+  ({ count, increase }) => (
+    <>
+      <h1>{count}</h1>
+      <button onClick={increase}>Increase</button>
+    </>
+  )
+);
+render(<Counter />, document.getElementById("root"));
 ```
 
 ## Todo App (Performance test)
@@ -273,8 +302,8 @@ import $ from "react-xs";
 const state1 = $(0);
 const state2 = $(0);
 
-$.subscribe([state1, state2], (state1Value, state2Value) => {
-  console.log("test1", state1Value, state2Value);
+$.subscribe([state1, state2], () => {
+  console.log("test1", state1.value, state2.value);
 });
 
 // using debounce option
@@ -499,3 +528,5 @@ render(<Counter />, document.getElementById("root"));
 ```
 
 ## API
+
+## Credits

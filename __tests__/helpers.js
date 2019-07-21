@@ -96,3 +96,43 @@ test("unset(prop1, prop2)", () => {
 
   expect(state.value).toEqual({});
 });
+
+test("orderBy(prop, desc)", () => {
+  const state = $([
+    { age: 3, name: "def" },
+    { age: 1, name: "abc" },
+    { age: 2, name: "abc" }
+  ]);
+
+  state.orderBy("age");
+
+  expect(state.value).toEqual([
+    { age: 1, name: "abc" },
+    { age: 2, name: "abc" },
+    { age: 3, name: "def" }
+  ]);
+
+  state.orderBy("age", true);
+
+  expect(state.value).toEqual([
+    { age: 3, name: "def" },
+    { age: 2, name: "abc" },
+    { age: 1, name: "abc" }
+  ]);
+});
+
+test("orderBy([name, asc], [age, desc])", () => {
+  const state = $([
+    { age: 3, name: "def" },
+    { age: 1, name: "abc" },
+    { age: 2, name: "abc" }
+  ]);
+
+  state.orderBy(["name", false], ["age", true]);
+
+  expect(state.value).toEqual([
+    { age: 2, name: "abc" },
+    { age: 1, name: "abc" },
+    { age: 3, name: "def" }
+  ]);
+});
