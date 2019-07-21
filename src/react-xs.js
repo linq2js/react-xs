@@ -27,7 +27,7 @@ const asyncLoading = {
   data: undefined,
   error: undefined
 };
-const defaultComparer = (a, b) => a === b;
+const strictComparer = (a, b) => a === b;
 
 /**
  * x(); => create state without default value
@@ -47,8 +47,10 @@ function main(...args) {
   return createState(args[0], args[1]);
 }
 
-function createState(defaultValue, options) {
-  return new State(defaultValue, options);
+function createState(defaultValue, options = {}) {
+  // exclude internal usage options
+  const { root, parent, prop, ...safeOptions } = options;
+  return new State(defaultValue, safeOptions);
 }
 
 function createComponent(
@@ -357,7 +359,7 @@ function useBinding(action, props) {
 
 function State(
   defaultValue,
-  { parent, root, prop, compare = defaultComparer } = {}
+  { parent, root, prop, compare = strictComparer } = {}
 ) {
   this.__value = defaultValue;
   this.__subStates = new Map();
@@ -697,7 +699,7 @@ function dispatch(action, ...args) {
   }
 
   if (Array.isArray(action)) {
-    return dispatch(...action , ...args);
+    return dispatch(...action, ...args);
   }
   let result = undefined;
   mutate(() => {
@@ -948,7 +950,8 @@ extend({
   assign(...objs) {
     if (!objs.length) return;
     return this.mutate(obj => Object.assign({}, obj, ...objs));
-  }
+  },
+  merge() {}
 });
 
 const modifyDate = (
