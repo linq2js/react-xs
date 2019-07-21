@@ -1,6 +1,6 @@
 # react-xs
 
-![Logo](./assets/logo.png)
+![Logo](assets/logo.png)
 
 Minimalism state manager
 
