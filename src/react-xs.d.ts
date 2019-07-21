@@ -197,12 +197,19 @@ declare module 'react-xs' {
   ) => State<TType>;
   type StateAsync<TType = any> = (params: PromiseLike<TType> | StateAsyncParams<TType>) => ReturnType<StateMutate<TType, AsyncState<TType>>>
 
-  interface XsOptions {
+  interface XsComponentOptions {
     unmount: any;
     one: any;
     many: any;
     states: any;
     actions: any;
+  }
+
+  interface XsStateOptions {
+    parent: any;
+    root: any;
+    prop: any;
+    compare: any;
   }
 
   // function main<TType = any>(): XsState<TType>;
@@ -216,12 +223,12 @@ declare module 'react-xs' {
   interface Xs {
     <TType = any>(): XsState<TType>;
 
-    <TType>(defaultValue: TType, options?: Partial<XsOptions>): XsState<TType>;
+    <TType>(defaultValue: TType, options?: Partial<XsStateOptions>): XsState<TType>;
 
     <TType, TProps>(component: React.ComponentType<TProps>): React.ComponentType<TProps & { [key: string]: any }>;
 
     <TType, TProps>(
-      options: Partial<XsOptions>,
+      options: Partial<XsComponentOptions>,
       component: React.ComponentType<TProps>
     ): React.ComponentType<TProps & { [key: string]: any }>;
 
@@ -250,7 +257,7 @@ declare module 'react-xs' {
                                       : Func<any, ReturnType<TFn>>>
     (fn: TFn, ...fns: TFns): TReturn;
 
-    hoc<TProps>(options: Partial<XsOptions>): Func<React.ComponentType, React.ComponentType<TProps & { [key: string]: any }>>;
+    hoc<TProps>(options: Partial<XsComponentOptions>): Func<React.ComponentType, React.ComponentType<TProps & { [key: string]: any }>>;
 
     hoc<TProps>(...callbacks: HocCallback[]): Func<React.ComponentType, React.ComponentType<TProps & { [key: string]: any }>>;
 
