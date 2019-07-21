@@ -11,6 +11,8 @@ declare module "react-xs" {
 
   type Func<A = any, B = any> = (a: A) => B;
 
+  type Equality<TType = any> = (a: TType, b: TType) => boolean;
+
   type HocCallback<
     TProps = any,
     THocProps = any,
@@ -272,8 +274,12 @@ declare module "react-xs" {
     actions: { [key: string]: (props: TProps, ...args: any[]) => void };
   }
 
+  interface XsStateOptions<TType = any> {
+    comparer: Equality<TType>
+  }
+
   interface Xs {
-    <TType = any>(defaultValue?: TType): XsState<TType>;
+    <TType = any>(defaultValue?: TType, options?: Partial<XsStateOptions<TType>>): XsState<TType>;
 
     <TType, TProps>(
       component: React.ComponentType<TProps>
