@@ -216,7 +216,7 @@ declare module 'react-xs' {
   interface Xs {
     <TType = any>(): XsState<TType>;
 
-    <TType>(defaultValue: TType): XsState<TType>;
+    <TType>(defaultValue: TType, options?: Partial<XsOptions>): XsState<TType>;
 
     <TType, TProps>(component: React.ComponentType<TProps>): React.ComponentType<TProps & { [key: string]: any }>;
 
