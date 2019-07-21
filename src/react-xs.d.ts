@@ -134,18 +134,18 @@ declare module 'react-xs' {
     ): ReturnType<StateMutate<TType>>;
   }
 
-  interface ArrayState<TType = any> extends State<TType[]> {
-    first(defaultValue?: TType): TType;
+  interface ArrayState<TType = any> extends State<TType> {
+    first(defaultValue?: Unpacked<TType>): Unpacked<TType>;
 
-    last(defaultValue?: TType): TType;
+    last(defaultValue?: Unpacked<TType>): Unpacked<TType>;
 
-    push(...items: TType[]): ReturnType<StateMutate<TType[]>>;
+    push(...items: Unpacked<TType>[]): ReturnType<StateMutate<TType>>;
 
-    pop(): ReturnType<StateMutate<TType[]>>;
+    pop(): ReturnType<StateMutate<TType>>;
 
-    shift(): ReturnType<StateMutate<TType[]>>;
+    shift(): ReturnType<StateMutate<TType>>;
 
-    unshift(...items: TType[]): ReturnType<StateMutate<TType[]>>;
+    unshift(...items: Unpacked<TType>[]): ReturnType<StateMutate<TType>>;
 
     splice(
       start: number,
