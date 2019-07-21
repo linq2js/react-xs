@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 declare module 'react-xs' {
   import * as React from 'react';
 
