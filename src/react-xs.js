@@ -417,6 +417,11 @@ Object.defineProperty(State.prototype, "value", {
       this.__requireStack = requiredStateStack;
       requiredStateStack.add(this);
     }
+
+    if (this.computer) {
+      this.computer.start();
+    }
+
     return this.__getValue();
   },
 
@@ -481,7 +486,12 @@ Object.assign(State.prototype, {
     return this;
   },
 
-  compute(states, computer, { onError, ...options } = {}) {
+  compute(states, computer, { onError, lazy, ...options } = {}) {
+    if (this.computer) {
+      this.computer.unsubscribe();
+      delete this.computer;
+    }
+
     const compute = () => {
       // prevent recursive calling
       if (this.__isComputing) return;
@@ -489,7 +499,7 @@ Object.assign(State.prototype, {
       // create token for each computing session
       this.__computingToken = {};
       try {
-        const result = computer(...states.map(state => state.__getValue()));
+        const result = computer();
         // async result
         if (result && result.then) {
           if (this.__async) {
@@ -539,7 +549,20 @@ Object.assign(State.prototype, {
 
     subscribe(states, compute, options);
 
-    compute();
+    if (lazy) {
+      this.computer = {
+        start() {
+          if (this.started) return;
+          this.started = true;
+          setTimeout(compute, 0);
+        },
+        unsubscribe() {
+          states.forEach(state => state.unsubscribe(compute));
+        }
+      };
+    } else {
+      compute();
+    }
 
     return this;
   },

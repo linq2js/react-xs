@@ -1,5 +1,7 @@
 # react-xs
 
+![Logo](assets/logo.png)
+
 Minimalism state manager
 
 ## Features
@@ -333,7 +335,7 @@ import $ from "react-xs";
 
 const state1 = $(1);
 const state2 = $(2);
-const state3 = $().compute([state1, state2], (s1, s2) => s1 + s2); // state3 = 3
+const state3 = $().compute([state1, state2], () => state1.value + state2.value); // state3 = 3
 state1.value = 100; // state3 = 102
 state2.value = 101; // state3 = 201
 ```
