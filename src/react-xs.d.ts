@@ -1,26 +1,50 @@
-declare module 'react-xs' {
-  import * as React from 'react';
+declare module "react-xs" {
+  import * as React from "react";
 
-  type Unpacked<T> =
-    T extends (infer U)[] ? U :
-    T extends (...args: any[]) => infer U ? U :
-    T extends Promise<infer U> ? U :
-    T;
+  type Unpacked<T> = T extends (infer U)[]
+    ? U
+    : T extends (...args: any[]) => infer U
+    ? U
+    : T extends Promise<infer U>
+    ? U
+    : T;
 
   type Func<A = any, B = any> = (a: A) => B;
 
-  type HocCallback<TProps = any, THocProps = any, TComponent extends React.ComponentType<TProps> = never> = (
+  type HocCallback<
+    TProps = any,
+    THocProps = any,
+    TComponent extends React.ComponentType<TProps> = never
+  > = (
     props: THocProps,
     component?: TComponent
   ) => TComponent extends never ? TProps & THocProps : React.ReactElement;
 
   type Unsubscribe = () => void;
 
-  type DateDuration = 'D' | 'M' | 'Y' | 'W' | 'h' | 'm' | 's' | 'ms'
-    | 'day' | 'month' | 'year' | 'week' | 'hour' | 'minute' | 'second' | 'milli';
+  type DateDuration =
+    | "D"
+    | "M"
+    | "Y"
+    | "W"
+    | "h"
+    | "m"
+    | "s"
+    | "ms"
+    | "day"
+    | "month"
+    | "year"
+    | "week"
+    | "hour"
+    | "minute"
+    | "second"
+    | "milli";
 
   interface StateAsyncParams<TType = any> {
-    done?: ((value: TType, error: any) => React.ReactElement | any) | string | number;
+    done?:
+      | ((value: TType, error: any) => React.ReactElement | any)
+      | string
+      | number;
     loading?: (() => React.ReactElement | any) | string | number;
     success?: ((value: TType) => React.ReactElement | any) | string | number;
     error?: ((error: any) => React.ReactElement | any) | string | number;
@@ -56,9 +80,14 @@ declare module 'react-xs' {
   }
 
   interface DateState extends State<Date> {
-    add(value: number, dateModifier: DateDuration): ReturnType<StateMutate<Date>>;
+    add(
+      value: number,
+      dateModifier: DateDuration
+    ): ReturnType<StateMutate<Date>>;
 
-    add(...dateModifiers: [number, DateDuration][]): ReturnType<StateMutate<Date>>;
+    add(
+      ...dateModifiers: [number, DateDuration][]
+    ): ReturnType<StateMutate<Date>>;
   }
 
   interface StringState extends State<string> {
@@ -73,7 +102,10 @@ declare module 'react-xs' {
      */
     substr(start: number, length?: number): ReturnType<StateMutate<string>>;
 
-    substring(indexStart: number, indexEnd?: number): ReturnType<StateMutate<string>>;
+    substring(
+      indexStart: number,
+      indexEnd?: number
+    ): ReturnType<StateMutate<string>>;
 
     trim(): ReturnType<StateMutate<string>>;
 
@@ -83,15 +115,23 @@ declare module 'react-xs' {
   }
 
   interface ObjectState<TType extends {} = any> extends State<TType> {
-    def<TValue>(path: string | string[], value: TValue): ReturnType<StateMutate<TType>>;
+    def<TValue>(
+      path: string | string[],
+      value: TValue
+    ): ReturnType<StateMutate<TType>>;
 
     toggle(...props: Array<keyof TType>): ReturnType<StateMutate<TType>>;
 
     unset(...props: Array<keyof TType>): ReturnType<StateMutate<TType>>;
 
-    set<TValue = never>(propOrValue: TType | string | string[], value?: TValue): State<TType>;
+    set<TValue = never>(
+      propOrValue: TType | string | string[],
+      value?: TValue
+    ): State<TType>;
 
-    assign(...objs: Array<{ [key in keyof TType]: TType[key] }>): ReturnType<StateMutate<TType>>;
+    assign(
+      ...objs: Array<{ [key in keyof TType]: TType[key] }>
+    ): ReturnType<StateMutate<TType>>;
   }
 
   interface ArrayState<TType = any> extends State<TType[]> {
@@ -107,17 +147,32 @@ declare module 'react-xs' {
 
     unshift(...items: TType[]): ReturnType<StateMutate<TType[]>>;
 
-    splice(start: number, deleteCount?: number, ...items: TType[]): ReturnType<StateMutate<TType[]>>;
+    splice(
+      start: number,
+      deleteCount?: number,
+      ...items: TType[]
+    ): ReturnType<StateMutate<TType[]>>;
 
-    filter(predicate: (item: TType) => boolean): ReturnType<StateMutate<TType[]>>;
+    filter(
+      predicate: (item: TType) => boolean
+    ): ReturnType<StateMutate<TType[]>>;
 
-    orderBy(prop: string | ((item: TType) => number), desc?: boolean): ReturnType<StateMutate<TType[]>>;
+    orderBy(
+      prop: string | ((item: TType) => number),
+      desc?: boolean
+    ): ReturnType<StateMutate<TType[]>>;
 
-    orderBy(orders: { [prop: string]: boolean }): ReturnType<StateMutate<TType[]>>;
+    orderBy(orders: {
+      [prop: string]: boolean;
+    }): ReturnType<StateMutate<TType[]>>;
 
-    orderBy(...orders: [string | ((item: TType) => number), boolean][]): ReturnType<StateMutate<TType[]>>;
+    orderBy(
+      ...orders: [string | ((item: TType) => number), boolean][]
+    ): ReturnType<StateMutate<TType[]>>;
 
-    sort(sortFn?: (first: TType, second: TType) => number): ReturnType<StateMutate<TType[]>>
+    sort(
+      sortFn?: (first: TType, second: TType) => number
+    ): ReturnType<StateMutate<TType[]>>;
 
     concat(...items: TType[]): ReturnType<StateMutate<TType[]>>;
 
@@ -125,11 +180,9 @@ declare module 'react-xs' {
 
     flat(depth?: number): ReturnType<StateMutate<TType[]>>;
 
-    map<TMapResult>(mapFn: (
-      item: TType,
-      index?: number,
-      array?: TType[]
-    ) => TMapResult): ReturnType<StateMutate<TMapResult[]>>;
+    map<TMapResult>(
+      mapFn: (item: TType, index?: number, array?: TType[]) => TMapResult
+    ): ReturnType<StateMutate<TMapResult[]>>;
 
     reverse(): ReturnType<StateMutate<TType[]>>;
 
@@ -144,19 +197,23 @@ declare module 'react-xs' {
       mapper: (item: TType, index?: number, array?: TType[]) => TMapResult
     ): ReturnType<StateMutate<TType[]>>;
 
-    swap(sourceIndex: number, destinationIndex: number): ReturnType<StateMutate<TType[]>>;
+    swap(
+      sourceIndex: number,
+      destinationIndex: number
+    ): ReturnType<StateMutate<TType[]>>;
   }
 
   type XsState<TType = any> = TType extends number
-                              ? NumberState
-                              : TType extends string
-                                ? StringState
-                                : TType extends Date
-                                  ? DateState
-                                  : TType extends {}
-                                    ? ObjectState<TType>
-                                    : TType extends []
-                                      ? ArrayState<TType> : State<TType>;
+    ? NumberState
+    : TType extends string
+    ? StringState
+    : TType extends Date
+    ? DateState
+    : TType extends {}
+    ? ObjectState<TType>
+    : TType extends []
+    ? ArrayState<TType>
+    : State<TType>;
 
   interface SubscribeOptions {
     debounce?: boolean;
@@ -174,94 +231,113 @@ declare module 'react-xs' {
     onChange: OnChangeHandler<TType>;
   }
 
-  type StateProp<TDestinationType = any> = (path: string | string[]) => State<TDestinationType>;
-  type StateGet<TDestinationType = any> = (path: string | string[]) => ReturnType<StateProp<TDestinationType>>['value'];
+  type StateProp<TDestinationType = any> = (
+    path: string | string[]
+  ) => State<TDestinationType>;
+  type StateGet<TDestinationType = any> = (
+    path: string | string[]
+  ) => ReturnType<StateProp<TDestinationType>>["value"];
 
   type StateSubscription<TType = any> = (value: TType) => void;
   type StateSubscribe<TType = any> = (
     subscription: StateSubscription<TType>,
     options?: SubscribeOptions
   ) => Unsubscribe;
-  type StateUnsubscribe<TType = any> = (subscription: StateSubscription<TType>) => void;
-  type StateTap<TType = any> = (tapAction: (state: State<TType>, value: TType) => void) => State<TType>;
+  type StateUnsubscribe<TType = any> = (
+    subscription: StateSubscription<TType>
+  ) => void;
+  type StateTap<TType = any> = (
+    tapAction: (state: State<TType>, value: TType) => void
+  ) => State<TType>;
   type StateMutate<TType = any, TReturnType = never> = (
-    mutateAction: (value: TType) => TReturnType extends never
-                                    ? TType
-                                    : TReturnType,
+    mutateAction: (
+      value: TType
+    ) => TReturnType extends never ? TType : TReturnType,
     needClone: boolean
   ) => State<TReturnType extends never ? TReturnType : TType>;
-  type StateCompute<TType = any, TStates extends Array<State> = [State]> = (
-    states: TStates,
+  type StateCompute<TType = any> = (
+    states: Array<State>,
     computer: () => TType,
     options?: ComputeOptions
   ) => State<TType>;
-  type StateAsync<TType = any> = (params: PromiseLike<TType> | StateAsyncParams<TType>) => ReturnType<StateMutate<TType, AsyncState<TType>>>
+  type StateAsync<TType = any> = (
+    params: PromiseLike<TType> | StateAsyncParams<TType>
+  ) => ReturnType<StateMutate<TType, AsyncState<TType>>>;
 
-  interface XsComponentOptions {
-    unmount: any;
-    one: any;
-    many: any;
-    states: any;
-    actions: any;
+  interface XsComponentOptions<TProps = any> {
+    unmount: Array<(props: TProps) => void>;
+    one: Array<(props: TProps) => void>;
+    many: Array<(props: TProps) => void>;
+    states: { [key: string]: State };
+    actions: { [key: string]: (props: TProps, ...args: any[]) => void };
   }
-
-  interface XsStateOptions {
-    parent: any;
-    root: any;
-    prop: any;
-    compare: any;
-  }
-
-  // function main<TType = any>(): XsState<TType>;
-  //
-  // function main<TType>(defaultValue: TType): XsState<TType>;
-  //
-  // function main<TType, TProps>(component: React.ComponentType<TProps>): React.ComponentType<TProps & { [key:
-  // string]: any }>;  function main<TType, TProps>( options: Partial<XsOptions>, component:
-  // React.ComponentType<TProps> ): React.ComponentType<TProps & { [key: string]: any }>;
 
   interface Xs {
-    <TType = any>(): XsState<TType>;
+    <TType = any>(defaultValue?: TType): XsState<TType>;
 
-    <TType>(defaultValue: TType, options?: Partial<XsStateOptions>): XsState<TType>;
-
-    <TType, TProps>(component: React.ComponentType<TProps>): React.ComponentType<TProps & { [key: string]: any }>;
+    <TType, TProps>(
+      component: React.ComponentType<TProps>
+    ): React.ComponentType<TProps & { [key: string]: any }>;
 
     <TType, TProps>(
       options: Partial<XsComponentOptions>,
       component: React.ComponentType<TProps>
     ): React.ComponentType<TProps & { [key: string]: any }>;
 
-    compose<TFn extends Func,
+    compose<
+      TFn extends Func,
       TFns extends Array<Func>,
       TReturn extends TFns extends []
-                      ? TFn :
-                      TFns extends [Func<infer A, any>]
-                      ? Func<A, ReturnType<TFn>>
-                      : TFns extends [any, Func<infer A, any>]
-                        ? Func<A, ReturnType<TFn>>
-                        : TFns extends [any, any, Func<infer A, any>]
-                          ? Func<A, ReturnType<TFn>>
-                          : TFns extends [any, any, any, Func<infer A, any>]
-                            ? Func<A, ReturnType<TFn>>
-                            : TFns extends [any, any, any, any, Func<infer A, any>]
-                              ? Func<A, ReturnType<TFn>>
-                              : TFns extends [any, any, any, any, any, Func<infer A, any>]
-                                ? Func<A, ReturnType<TFn>>
-                                : TFns extends [any, any, any, any, any, any, Func<infer A, any>]
-                                  ? Func<A, ReturnType<TFn>>
-                                  : TFns extends [any, any, any, any, any, any, any, Func<infer A, any>]
-                                    ? Func<A, ReturnType<TFn>>
-                                    : TFns extends [any, any, any, any, any, any, any, any, Func<infer A, any>]
-                                      ? Func<A, ReturnType<TFn>>
-                                      : Func<any, ReturnType<TFn>>>
-    (fn: TFn, ...fns: TFns): TReturn;
+        ? TFn
+        : TFns extends [Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, any, any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, any, any, any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, any, any, any, any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, any, any, any, any, any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [any, any, any, any, any, any, any, Func<infer A, any>]
+        ? Func<A, ReturnType<TFn>>
+        : TFns extends [
+            any,
+            any,
+            any,
+            any,
+            any,
+            any,
+            any,
+            any,
+            Func<infer A, any>
+          ]
+        ? Func<A, ReturnType<TFn>>
+        : Func<any, ReturnType<TFn>>
+    >(
+      fn: TFn,
+      ...fns: TFns
+    ): TReturn;
 
-    hoc<TProps>(options: Partial<XsComponentOptions>): Func<React.ComponentType, React.ComponentType<TProps & { [key: string]: any }>>;
+    hoc<TProps>(
+      options: Partial<XsComponentOptions>
+    ): Func<
+      React.ComponentType,
+      React.ComponentType<TProps & { [key: string]: any }>
+    >;
 
-    hoc<TProps>(...callbacks: HocCallback[]): Func<React.ComponentType, React.ComponentType<TProps & { [key: string]: any }>>;
+    hoc<TProps>(
+      ...callbacks: HocCallback[]
+    ): Func<
+      React.ComponentType,
+      React.ComponentType<TProps & { [key: string]: any }>
+    >;
 
-    bind<TProps>(action: React.ComponentType<TProps>, props: TProps): void;
+    bind<TProps>(action: React.ComponentType<TProps>, props?: TProps): void;
 
     mutate(action: () => void): void;
 
@@ -269,16 +345,24 @@ declare module 'react-xs' {
 
     extend(...args: any[]): void;
 
-    get<TStateMap extends {} = any,
+    get<
+      TStateMap extends {} = any,
       TReturn extends TStateMap extends { [key: string]: State<infer T> }
-                      ? { [key: string]: T }
-                      : {} = any>
-    (stateMap: TStateMap): TReturn;
+        ? { [key: string]: T }
+        : {} = any
+    >(
+      stateMap: TStateMap
+    ): TReturn;
 
-    set<TStateMap extends {} = any,
+    set<
+      TStateMap extends {} = any,
       TData extends TStateMap extends { [key: string]: State<infer T> }
-                    ? { [key: string]: T }
-                    : {} = any>(stateMap: TStateMap, data?: TData): void
+        ? { [key: string]: T }
+        : {} = any
+    >(
+      stateMap: TStateMap,
+      data?: TData
+    ): void;
 
     unmount<TProps = any>(...callbacks: Array<(props: TProps) => void>): void;
 
@@ -286,7 +370,9 @@ declare module 'react-xs' {
 
     many<TProps = any>(
       action: (props: TProps) => void,
-      argResolver: Array<TProps[keyof TProps]> | ((props: TProps) => Array<TProps[keyof TProps]>)
+      argResolver:
+        | Array<TProps[keyof TProps]>
+        | ((props: TProps) => Array<TProps[keyof TProps]>)
     ): void;
 
     subscribe<TStates extends Array<State> = [State]>(
