@@ -152,57 +152,57 @@ declare module "react-xs" {
     splice(
       start: number,
       deleteCount?: number,
-      ...items: TType[]
+      ...items: Unpacked<TType>[]
     ): ReturnType<StateMutate<TType[]>>;
 
     filter(
-      predicate: (item: TType) => boolean
-    ): ReturnType<StateMutate<TType[]>>;
+      predicate: (item: Unpacked<TType>) => boolean
+    ): ReturnType<StateMutate<TType>>;
 
     orderBy(
-      prop: string | ((item: TType) => number),
+      prop: string | ((item: Unpacked<TType>) => number),
       desc?: boolean
-    ): ReturnType<StateMutate<TType[]>>;
+    ): ReturnType<StateMutate<TType>>;
 
     orderBy(orders: {
       [prop: string]: boolean;
-    }): ReturnType<StateMutate<TType[]>>;
+    }): ReturnType<StateMutate<TType>>;
 
     orderBy(
-      ...orders: [string | ((item: TType) => number), boolean][]
-    ): ReturnType<StateMutate<TType[]>>;
+      ...orders: [string | ((item: Unpacked<TType>) => number), boolean][]
+    ): ReturnType<StateMutate<TType>>;
 
     sort(
-      sortFn?: (first: TType, second: TType) => number
-    ): ReturnType<StateMutate<TType[]>>;
+      sortFn?: (first: Unpacked<TType>, second: Unpacked<TType>) => number
+    ): ReturnType<StateMutate<TType>>;
 
-    concat(...items: TType[]): ReturnType<StateMutate<TType[]>>;
+    concat(...items: Unpacked<TType>[]): ReturnType<StateMutate<TType>>;
 
-    fill(...items: TType[]): ReturnType<StateMutate<TType[]>>;
+    fill(...items: Unpacked<TType>[]): ReturnType<StateMutate<TType>>;
 
-    flat(depth?: number): ReturnType<StateMutate<TType[]>>;
+    flat(depth?: number): ReturnType<StateMutate<TType>>;
 
     map<TMapResult>(
-      mapFn: (item: TType, index?: number, array?: TType[]) => TMapResult
+      mapFn: (item: Unpacked<TType>, index?: number, array?: TType) => TMapResult
     ): ReturnType<StateMutate<TMapResult[]>>;
 
-    reverse(): ReturnType<StateMutate<TType[]>>;
+    reverse(): ReturnType<StateMutate<TType>>;
 
-    slice(begin?: number, end?: number): ReturnType<StateMutate<TType[]>>;
+    slice(begin?: number, end?: number): ReturnType<StateMutate<TType>>;
 
-    exclude(...items: TType[]): State<TType[]>;
+    exclude(...items: Unpacked<TType>[]): State<TType>;
 
-    remove(...indexes: number[]): State<TType[]>;
+    remove(...indexes: number[]): State<TType>;
 
     filterMap<TMapResult>(
-      predicate: (item: TType, index?: number, array?: TType[]) => boolean,
-      mapper: (item: TType, index?: number, array?: TType[]) => TMapResult
-    ): ReturnType<StateMutate<TType[]>>;
+      predicate: (item: Unpacked<TType>, index?: number, array?: TType) => boolean,
+      mapper: (item: Unpacked<TType>, index?: number, array?: TType) => TMapResult
+    ): ReturnType<StateMutate<TType>>;
 
     swap(
       sourceIndex: number,
       destinationIndex: number
-    ): ReturnType<StateMutate<TType[]>>;
+    ): ReturnType<StateMutate<TType>>;
   }
 
   type XsState<TType = any> = TType extends number
