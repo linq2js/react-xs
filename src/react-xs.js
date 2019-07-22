@@ -15,18 +15,8 @@ let oneEffects;
 let manyEffects;
 let unmountEffects;
 let mutationScopes = 0;
-const asyncInitial = {
-  done: false,
-  loading: false,
-  data: undefined,
-  error: undefined
-};
-const asyncLoading = {
-  done: false,
-  loading: true,
-  data: undefined,
-  error: undefined
-};
+const asyncInitial = createAsyncResult(false, false);
+const asyncLoading = createAsyncResult(true, false);
 const strictComparer = (a, b) => a === b;
 
 /**
@@ -359,8 +349,9 @@ function useBinding(action, props) {
 
 function State(
   defaultValue,
-  { parent, root, prop, compare = strictComparer } = {}
+  { name, parent, root, prop, compare = strictComparer } = {}
 ) {
+  this.name = name;
   this.__value = defaultValue;
   this.__subStates = new Map();
   this.__root = root || this;
@@ -368,6 +359,12 @@ function State(
   this.__parent = parent;
   this.__compare = compare;
   this.__subscriptions = root ? root.__subscriptions : new Set();
+  this.__chunkSize = undefined;
+  this.__chunks = undefined;
+  this.__computingToken = undefined;
+  this.__isComputing = false;
+  this.__async = false;
+  this.__shouldChunksUpdate = false;
 
   this.__getValue = tryEval => {
     if (this.__parent) {
@@ -573,24 +570,14 @@ Object.assign(State.prototype, {
                 return;
               }
               if (this.__async) {
-                this.value = {
-                  loading: false,
-                  done: true,
-                  data,
-                  error: undefined
-                };
+                this.value = createAsyncResult(false, true, data);
               } else {
                 this.value = data;
               }
             },
             error => {
               if (this.__async) {
-                this.value = {
-                  loading: false,
-                  done: true,
-                  data,
-                  error
-                };
+                this.value = createAsyncResult(false, true, undefined, error);
               }
               onError && onError(error);
             }
@@ -626,13 +613,14 @@ Object.assign(State.prototype, {
   },
 
   async(promise) {
+    this.__async = true;
+
     if (!arguments.length) {
       // mark state as async state
-      this.__async = true;
       return this.mutate(value =>
         typeof value === "undefined"
           ? asyncInitial
-          : { loading: false, done: false, data: value, error: undefined }
+          : createAsyncResult(false, false, value)
       );
     }
 
@@ -671,22 +659,12 @@ Object.assign(State.prototype, {
       data => {
         done = true;
         token === this.__currentPromiseToken &&
-          (this.value = {
-            loading: false,
-            done,
-            data,
-            error: undefined
-          });
+          (this.value = createAsyncResult(false, true, data));
       },
       error => {
         done = true;
         token === this.__currentPromiseToken &&
-          (this.value = {
-            loading: false,
-            done,
-            error,
-            data: undefined
-          });
+          (this.value = createAsyncResult(false, true, undefined, error));
       }
     );
 
@@ -740,6 +718,15 @@ function mutate(functor) {
       notify(subscriptions);
     }
   }
+}
+
+function createAsyncResult(loading, done, data, error) {
+  return {
+    loading,
+    done,
+    data,
+    error
+  };
 }
 
 function dispatch(action, ...args) {
@@ -1148,6 +1135,19 @@ function renderList(state, renderer) {
   return createElement(listRenderer, { state, renderer });
 }
 
+function snapshot(...states) {
+  const snapshots = new Map();
+  states.forEach(state =>
+    snapshots.set(state, {
+      __value: state.__value
+    })
+  );
+
+  return () => {
+    states.forEach(state => (state.__value = snapshots.get(state).__value));
+  };
+}
+
 Object.assign(main, {
   hoc,
   compose,
@@ -1165,7 +1165,8 @@ Object.assign(main, {
   bind: useBinding,
   dispatch,
   call: dispatch,
-  list: renderList
+  list: renderList,
+  snapshot
 });
 
 export default main;
