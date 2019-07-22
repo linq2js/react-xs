@@ -363,7 +363,7 @@ function State(
 ) {
   this.__value = defaultValue;
   this.__subStates = new Map();
-  this.__root = root;
+  this.__root = root || this;
   this.__prop = prop;
   this.__parent = parent;
   this.__compare = compare;
@@ -403,7 +403,7 @@ function State(
       this.__subStates.set(
         prop,
         (subState = new State(undefined, {
-          root: this.__root || this,
+          root: this.__root,
           parent: this,
           prop
         }))
@@ -450,7 +450,63 @@ Object.defineProperty(State.prototype, "inputProps", {
   }
 });
 
+Object.defineProperty(State.prototype, "chunks", {
+  get() {
+    if (typeof this.__chunkSize === "undefined") {
+      throw new Error("No chunk size specified");
+    }
+
+    if (requiredStateStack && this.__requireStack !== requiredStateStack) {
+      this.__requireStack = requiredStateStack;
+      requiredStateStack.add(this);
+    }
+
+    if (this.__shouldChunksUpdate) {
+      let start = 0;
+      const values = this.__getValue();
+      const prevChunks = this.__chunks || [];
+      const chunks = [];
+      mutate(() => {
+        while (start < values.length) {
+          const chunk =
+            prevChunks.shift() || new State(undefined, { compare: arrayEqual });
+          const end = start + this.__chunkSize;
+          chunk.__start = start;
+          chunk.value = values.slice(start, end);
+          chunks.push(chunk);
+          start = end;
+        }
+      });
+      this.__chunks = chunks;
+      this.__shouldChunksUpdate = false;
+    }
+    return this.__chunks;
+  }
+});
+
 Object.assign(State.prototype, {
+  chunk(size) {
+    size = parseInt(size, 10) || 1;
+
+    if (size < 2) {
+      throw new Error("Invalid chunk size");
+    }
+
+    if (this.__chunkSize !== size) {
+      if (!this.__updateChunks) {
+        this.__updateChunks = () => {
+          this.__shouldChunksUpdate = true;
+        };
+        this.__root.subscribe(this.__updateChunks);
+      }
+
+      this.__chunkSize = size;
+      this.__shouldChunksUpdate = true;
+      notify(this.__subscriptions);
+    }
+
+    return this;
+  },
   prop(strings) {
     const path = Array.isArray(strings) ? strings[0] : strings;
     return path
@@ -655,6 +711,8 @@ Object.assign(State.prototype, {
 });
 
 function arrayEqual(a, b) {
+  if (!a || b) return false;
+  if (!b || a) return false;
   return a.length === b.length && a.every((i, index) => i === b[index]);
 }
 
@@ -1066,6 +1124,7 @@ extend({
     return this.mutate(current => current.toLowerCase());
   }
 });
+
 function createDebouncedFunction(func, interval = 20) {
   if (interval === false) return func;
   let timerId;
@@ -1073,6 +1132,20 @@ function createDebouncedFunction(func, interval = 20) {
     clearTimeout(timerId);
     timerId = setTimeout(func, interval, ...args);
   };
+}
+
+const chunkRenderer = memo(({ chunk, renderer }) => {
+  return chunk.value.map((item, index) => renderer(item, chunk.start + index));
+});
+
+const listRenderer = memo(({ state, renderer }) => {
+  return state.chunks.map(chunk =>
+    createElement(chunkRenderer, { chunk, renderer })
+  );
+});
+
+function renderList(state, renderer) {
+  return createElement(listRenderer, { state, renderer });
 }
 
 Object.assign(main, {
@@ -1091,7 +1164,8 @@ Object.assign(main, {
   unmount,
   bind: useBinding,
   dispatch,
-  call: dispatch
+  call: dispatch,
+  list: renderList
 });
 
 export default main;

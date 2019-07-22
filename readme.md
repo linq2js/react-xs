@@ -271,7 +271,7 @@ date.add(1, "year"); // add 1 year, 2021-01-01
 // duration can be year/Y, month/M, day/D,
 // hour/h, minute/m, second/s, milli
 // you also add multiple durations
-date.add(1, "M", 2, "D"); // add 1 month and 2 days, 2021-02-03
+date.add([1, "M"], [2, "D"]); // add 1 month and 2 days, 2021-02-03
 ```
 
 If you want to extend more helpers, just call \$.extend()
