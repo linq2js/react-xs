@@ -129,7 +129,7 @@ declare module "react-xs" {
     set<TValue = never>(
       propOrValue: TType | string | string[],
       value?: TValue
-    ): State<TType>;
+    ): XsState<TType>;
 
     assign(
       ...objs: Array<{ [key in keyof TType]: TType[key] }>
@@ -190,14 +190,14 @@ declare module "react-xs" {
 
     slice(begin?: number, end?: number): ReturnType<StateMutate<TType>>;
 
-    exclude(...items: Unpacked<TType>[]): State<TType>;
+    exclude(...items: Unpacked<TType>[]): XsState<TType>;
 
-    remove(...indexes: number[]): State<TType>;
+    remove(...indexes: number[]): XsState<TType>;
 
     filterMap<TMapResult>(
       predicate: (item: Unpacked<TType>, index?: number, array?: TType) => boolean,
       mapper: (item: Unpacked<TType>, index?: number, array?: TType) => TMapResult
-    ): ReturnType<StateMutate<TType>>;
+    ): ReturnType<StateMutate<TMapResult[]>>;
 
     swap(
       sourceIndex: number,
@@ -235,7 +235,7 @@ declare module "react-xs" {
 
   type StateProp<TDestinationType = any> = (
     path: string | string[]
-  ) => State<TDestinationType>;
+  ) => XsState<TDestinationType>;
   type StateGet<TDestinationType = any> = (
     path: string | string[]
   ) => ReturnType<StateProp<TDestinationType>>["value"];
@@ -249,19 +249,19 @@ declare module "react-xs" {
     subscription: StateSubscription<TType>
   ) => void;
   type StateTap<TType = any> = (
-    tapAction: (state: State<TType>, value: TType) => void
-  ) => State<TType>;
+    tapAction: (state: XsState<TType>, value: TType) => void
+  ) => XsState<TType>;
   type StateMutate<TType = any, TReturnType = never> = (
     mutateAction: (
       value: TType
     ) => TReturnType extends never ? TType : TReturnType,
     needClone: boolean
-  ) => State<TReturnType extends never ? TReturnType : TType>;
+  ) => XsState<TReturnType extends never ? TType : TReturnType>;
   type StateCompute<TType = any> = (
     states: Array<State>,
     computer: () => TType,
     options?: ComputeOptions
-  ) => State<TType>;
+  ) => XsState<TType>;
   type StateAsync<TType = any> = (
     params: PromiseLike<TType> | StateAsyncParams<TType>
   ) => ReturnType<StateMutate<TType, AsyncState<TType>>>;

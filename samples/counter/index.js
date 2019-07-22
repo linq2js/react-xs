@@ -8,6 +8,10 @@ const num3 = xs().compute([num1, num2], () => num1.value + num2.value);
 const date = xs(new Date());
 const objState = xs({});
 const arr = xs(['test']);
+
+const test = arr.map(item => item.length);
+const anotherTest = test.map(item => item.toString());
+
 const str = xs('');
 
 const count = xs(0);
