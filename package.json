@@ -3,6 +3,7 @@
   "version": "1.0.26",
   "description": "Minimalism state manager",
   "main": "src/react-xs.js",
+  "types": "src/react-xs.d.ts",
   "scripts": {
     "test": "jest",
     "$publish": "npm publish"
@@ -70,21 +71,22 @@
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.5",
-    "@babel/preset-env": "^7.4.5",
-    "@babel/plugin-transform-runtime": "^7.4.4",
-    "babel-plugin-module-resolver": "^3.2.0",
     "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "@babel/plugin-transform-runtime": "^7.4.4",
+    "@babel/preset-env": "^7.4.5",
+    "@babel/preset-react": "^7.0.0",
     "@babel/runtime": "^7.4.5",
+    "@testing-library/react": "^8.0.4",
+    "@testing-library/react-hooks": "^1.1.0",
+    "@types/react": "^16.8.23",
+    "babel-plugin-module-resolver": "^3.2.0",
     "jest": "^24.8.0",
+    "jest-dom": "^3.5.0",
+    "node-fetch": "^2.6.0",
     "prettier": "^1.18.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "@testing-library/react": "^8.0.4",
-    "react-testing-library": "^8.0.1",
-    "jest-dom": "^3.5.0",
-    "@babel/preset-react": "^7.0.0",
-    "@testing-library/react-hooks": "^1.1.0",
-    "node-fetch": "^2.6.0",
-    "react-test-renderer": "^16.8.6"
+    "react-test-renderer": "^16.8.6",
+    "react-testing-library": "^8.0.1"
   }
 }
