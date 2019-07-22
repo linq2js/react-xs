@@ -16,5 +16,5 @@ test("Should dispatch async action properly", done => {
     expect(onRejected.mock.calls.length).toBe(0);
 
     done();
-  }, 100);
+  }, 200);
 });
