@@ -1135,6 +1135,10 @@ function renderList(state, renderer) {
   return createElement(listRenderer, { state, renderer });
 }
 
+function createAction(action) {
+  return (...args) => dispatch(action, ...args);
+}
+
 function snapshot(...states) {
   const snapshots = new Map();
   states.forEach(state =>
@@ -1166,7 +1170,8 @@ Object.assign(main, {
   dispatch,
   call: dispatch,
   list: renderList,
-  snapshot
+  snapshot,
+  action: createAction
 });
 
 export default main;
