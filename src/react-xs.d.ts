@@ -130,7 +130,7 @@ declare module 'react-xs' {
     ): XsState<TType>;
 
     assign(
-      ...objs: Array<{ [key in keyof TType]: TType[key] }>
+      ...objs: Array<{ [key in keyof TType]?: TType[key] }>
     ): ReturnType<StateMutate<TType>>;
   }
 
