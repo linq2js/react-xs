@@ -47,8 +47,10 @@ function createComponent(
   component,
   {
     unmount: unmountOption,
-    one: oneOption,
-    many: manyOption,
+    once: onceOption,
+    one: oneOption = onceOption,
+    multiple: multipleOption,
+    many: manyOption = multipleOption,
     states: stateOption,
     actions: actionsOption
   } = {}
@@ -94,7 +96,7 @@ function createComponent(
             ? [manyOption]
             : //
               manyOption
-          ).forEach(many);
+          ).forEach(args => many(...args));
 
         // map actions to props
         actionMap && Object.assign(newProps, actionMap);
