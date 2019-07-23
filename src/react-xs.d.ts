@@ -86,7 +86,7 @@ declare module 'react-xs' {
     ): ReturnType<StateMutate<Date>>;
 
     add(
-      ...dateModifiers: [number, DateDuration][]
+      ...dateModifiers: Array<[number, DateDuration]>
     ): ReturnType<StateMutate<Date>>;
   }
 
@@ -167,7 +167,7 @@ declare module 'react-xs' {
     }): ReturnType<StateMutate<TType>>;
 
     orderBy(
-      ...orders: [string | ((item: Unpacked<TType>) => number), boolean][]
+      ...orders: Array<[string | ((item: Unpacked<TType>) => number), boolean]>
     ): ReturnType<StateMutate<TType>>;
 
     sort(
