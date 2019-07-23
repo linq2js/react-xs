@@ -15,10 +15,10 @@ declare module 'react-xs' {
 
   type HocCallback<TProps = any,
     THocProps = any,
-    TComponent extends React.ComponentType<TProps> = never> = (
+    TComponent extends React.ComponentType<TProps> = undefined> = (
     props: THocProps,
     component?: TComponent
-  ) => TComponent extends never ? TProps & THocProps : React.ReactElement;
+  ) => TComponent extends undefined ? TProps & THocProps : React.ReactElement;
 
   type Unsubscribe = () => void;
 
@@ -249,12 +249,12 @@ declare module 'react-xs' {
   type StateTap<TType = any> = (
     tapAction: (state: XsState<TType>, value: TType) => void
   ) => XsState<TType>;
-  type StateMutate<TType = any, TReturnType = never> = (
+  type StateMutate<TType = any, TReturnType = undefined> = (
     mutateAction: (
       value: TType
-    ) => TReturnType extends never ? TType : TReturnType,
+    ) => TReturnType extends undefined ? TType : TReturnType,
     needClone: boolean
-  ) => XsState<TReturnType extends never ? TType : TReturnType>;
+  ) => XsState<TReturnType extends undefined ? TType : TReturnType>;
   type StateCompute<TType = any> = (
     states: Array<State>,
     computer: () => TType,
