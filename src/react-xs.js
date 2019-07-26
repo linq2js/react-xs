@@ -436,12 +436,6 @@ Object.defineProperty(State.prototype, "loading", {
   }
 });
 
-Object.defineProperty(State.prototype, "error", {
-  get() {
-    return this.__value ? this.__value.error : undefined;
-  }
-});
-
 Object.defineProperty(State.prototype, "promise", {
   get() {
     return this.__promise;
