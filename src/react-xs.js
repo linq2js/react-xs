@@ -670,7 +670,14 @@ Object.assign(State.prototype, {
       }
     );
 
-    !done && (this.value = asyncLoading);
+    !done &&
+      (this.value = createAsyncResult(
+        true,
+        false,
+        this.__value && this.__value.asyncResult
+          ? this.__value.data
+          : this.__value
+      ));
     return this;
   },
 
@@ -724,6 +731,7 @@ function mutate(functor) {
 
 function createAsyncResult(loading, done, data, error) {
   return {
+    asyncResult: true,
     loading,
     done,
     data,
