@@ -285,6 +285,8 @@ function useBinding(action, props) {
       dispatch(effect, propsRef.current);
     }
 
+    oneEffectsRef.current.length = 0;
+
     // process unmount effect
     return () => {
       unmountEffectsRef.current.forEach(unmount => unmount(propsRef.current));

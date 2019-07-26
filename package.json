@@ -1,6 +1,6 @@
 {
   "name": "react-xs",
-  "version": "1.0.32",
+  "version": "1.0.33",
   "description": "Minimalism state manager",
   "main": "src/react-xs.js",
   "types": "src/react-xs.d.ts",
