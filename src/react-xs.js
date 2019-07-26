@@ -412,6 +412,42 @@ function State(
   };
 }
 
+Object.defineProperty(State.prototype, "data", {
+  get() {
+    return this.__value ? this.__value.data : undefined;
+  }
+});
+
+Object.defineProperty(State.prototype, "error", {
+  get() {
+    return this.__value ? this.__value.error : undefined;
+  }
+});
+
+Object.defineProperty(State.prototype, "done", {
+  get() {
+    return this.__value ? this.__value.done : false;
+  }
+});
+
+Object.defineProperty(State.prototype, "loading", {
+  get() {
+    return this.__value ? this.__value.loading : false;
+  }
+});
+
+Object.defineProperty(State.prototype, "error", {
+  get() {
+    return this.__value ? this.__value.error : undefined;
+  }
+});
+
+Object.defineProperty(State.prototype, "promise", {
+  get() {
+    return this.__promise;
+  }
+});
+
 Object.defineProperty(State.prototype, "value", {
   get() {
     if (requiredStateStack && this.__requireStack !== requiredStateStack) {
@@ -564,7 +600,7 @@ Object.assign(State.prototype, {
           }
           // save current token for late comparison
           const token = this.__computingToken;
-          result.then(
+          this.__promise = result.then(
             data => {
               // if saved token is diff with current token
               // that means there is a new computing call since last time
@@ -657,7 +693,7 @@ Object.assign(State.prototype, {
     const token = (this.__currentPromiseToken = {});
     let done = false;
 
-    promise.then(
+    this.__promise = promise.then(
       data => {
         done = true;
         token === this.__currentPromiseToken &&
